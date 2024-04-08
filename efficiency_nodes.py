@@ -23,11 +23,6 @@ my_dir = os.path.dirname(os.path.abspath(__file__))
 custom_nodes_dir = os.path.abspath(os.path.join(my_dir, '..'))
 comfy_dir = os.path.abspath(os.path.join(my_dir, '..', '..'))
 
-################ ED
-import nodes
-from server import PromptServer
-from PIL import Image, ImageOps, ImageSequence
-
 # Construct the path to the font file
 font_path = os.path.join(my_dir, 'arial.ttf')
 
@@ -243,85 +238,6 @@ class TSC_EfficientLoaderSDXL(TSC_EfficientLoader):
                         batch_size, lora_stack=lora_stack, cnet_stack=cnet_stack, refiner_name=refiner_ckpt_name,
                         ascore=(positive_ascore, negative_ascore), prompt=prompt, my_unique_id=my_unique_id, loader_type="sdxl")
 
-
-############## ED rgthree Context embedding
-
-_all_ed_context_input_output_data = {
-  "base_ctx": ("base_ctx", "RGTHREE_CONTEXT", "CONTEXT"),
-  "model": ("model", "MODEL", "MODEL"),
-  "refiner_model": ("refiner_model", "MODEL", "REFINER_MODEL"),
-  "clip": ("clip", "CLIP", "CLIP"),
-  "refiner_clip": ("refiner_clip", "CLIP", "REFINER_CLIP"),
-  "vae": ("vae", "VAE", "VAE"),
-  "positive": ("positive", "CONDITIONING", "POSITIVE"),
-  "refiner_positive": ("positive", "CONDITIONING", "REFINER_POSITIVE"),
-  "negative": ("negative", "CONDITIONING", "NEGATIVE"),
-  "refiner_negative": ("negative", "CONDITIONING", "REFINER_NEGATIVE"),
-  "latent": ("latent", "LATENT", "LATENT"),
-  "images": ("images", "IMAGE", "IMAGE"),
-  "seed": ("seed", "INT", "SEED"),
-  "steps": ("steps", "INT", "STEPS"),
-  "step_refiner": ("step_refiner", "INT", "STEP_REFINER"),
-  "cfg": ("cfg", "FLOAT", "CFG"),
-  "ckpt_name": ("ckpt_name", folder_paths.get_filename_list("checkpoints"), "CKPT_NAME"),
-  "sampler": ("sampler", comfy.samplers.KSampler.SAMPLERS, "SAMPLER"),
-  "scheduler": ("scheduler", comfy.samplers.KSampler.SCHEDULERS, "SCHEDULER"),
-  "clip_width": ("clip_width", "INT", "CLIP_WIDTH"),
-  "clip_height": ("clip_height", "INT", "CLIP_HEIGHT"),
-  "text_pos_g": ("text_pos_g", "STRING", "TEXT_POS_G"),
-  "text_pos_l": ("text_pos_l", "STRING", "TEXT_POS_L"),
-  "text_neg_g": ("text_neg_g", "STRING", "TEXT_NEG_G"),
-  "text_neg_l": ("text_neg_l", "STRING", "TEXT_NEG_L"),
-  "mask": ("mask", "MASK", "MASK"),
-  "control_net": ("control_net", "CONTROL_NET", "CONTROL_NET"),
-}
-
-def new_context_ed(base_ctx, **kwargs):
-    """Creates a new context from the provided data, with an optional base ctx to start."""
-    context = base_ctx if base_ctx is not None else None
-    new_ctx = {}
-    for key in _all_ed_context_input_output_data:
-        if key == "base_ctx":
-            continue
-        v = kwargs[key] if key in kwargs else None
-        new_ctx[key] = v if v is not None else context[key] if context is not None and key in context else None
-    return new_ctx
-
-def context_2_tuple_ed(ctx, inputs_list=None):
-    """Returns a tuple for returning in the order of the inputs list."""
-    if inputs_list is None:
-        inputs_list = _all_ed_context_input_output_data.keys()
-    tup_list = [ctx,]
-    for key in inputs_list:
-        if key == "base_ctx":
-            continue
-        tup_list.append(ctx[key] if ctx is not None and key in ctx else None)
-    return tuple(tup_list)
-
-#======= CASHE
-cashe_ed = {
-    "control_net": [],
-    "ultra_bbox_segm_detector": [],
-    "sam_model": [],
-    "ultimate_sd_upscaler": []
-}
-
-def cashload_ed(cashetype, model_name):
-    global cashe_ed
-    for entry in cashe_ed[cashetype]:
-        if entry[0] == model_name:
-            print(f"\033[36mED node use {cashetype} cashe: {entry[0]}\033[0m")
-            return entry[1]
-    return None
-    
-def cashsave_ed(cashetype, model_name, model, max_cashe):
-    global cashe_ed
-    if len(cashe_ed[cashetype])>= max_cashe:
-        cashe_ed[cashetype].pop(0)
-    cashe_ed[cashetype].append([model_name, model])
-    print(f"\033[36mED node save {cashetype} cashe: {model_name}\033[0m")
-    return
-
 #=======================================================================================================================
 # TSC Unpack SDXL Tuple
 class TSC_Unpack_SDXL_Tuple:
@@ -366,40 +282,9 @@ class TSC_Pack_SDXL_Tuple:
                  refiner_model, refiner_clip, refiner_positive, refiner_negative),)
 
 ########################################################################################################################
-
-def populate_items(names, type):
-    idx = None
-    item_name = None
-    for idx, item_name in enumerate(names):
-        
-        file_name = os.path.splitext(item_name)[0]
-        file_path = folder_paths.get_full_path(type, item_name)
-
-        if file_path is None:
-            names[idx] = {
-                "content": item_name,
-                "image": None,
-            }
-            continue
-
-        file_path_no_ext = os.path.splitext(file_path)[0]
-
-        for ext in ["png", "jpg", "jpeg", "preview.png"]:
-            has_image = os.path.isfile(file_path_no_ext + "." + ext)
-            if has_image:
-                item_image = f"{file_name}.{ext}"
-                break
-
-        names[idx] = {
-            "content": item_name,
-            "image": f"{type}/{item_image}" if has_image else None,
-        }
-    #names.sort(key=lambda i: i["content"].lower())
-
 # TSC LoRA Stacker
 class TSC_LoRA_Stacker:
     modes = ["simple", "advanced"]
-    MAX_LORA_COUNT = 9
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -407,19 +292,15 @@ class TSC_LoRA_Stacker:
         inputs = {
             "required": {
                 "input_mode": (cls.modes,),
-                "lora_count": ("INT", {"default": 3, "min": 0, "max": cls.MAX_LORA_COUNT, "step": 1}),
+                "lora_count": ("INT", {"default": 3, "min": 0, "max": 50, "step": 1}),
             }
         }
-        
-        inputs["required"][f"lora_name_{1}"] = (loras,)
-        populate_items(inputs["required"][f"lora_name_{1}"][0], "loras")
-        lora_name_array = inputs["required"][f"lora_name_{1}"]
-        for i in range(1, cls.MAX_LORA_COUNT):
-            inputs["required"][f"lora_name_{i}"] = lora_name_array
+
+        for i in range(1, 50):
+            inputs["required"][f"lora_name_{i}"] = (loras,)
             inputs["required"][f"lora_wt_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
-            #print(f"\033[36mlora stacker{i}////:{names}\033[0m")            
 
         inputs["optional"] = {
             "lora_stack": ("LORA_STACK",)
@@ -432,8 +313,7 @@ class TSC_LoRA_Stacker:
     CATEGORY = "Efficiency Nodes/Stackers"
 
     def lora_stacker(self, input_mode, lora_count, lora_stack=None, **kwargs):
-        for i in range(1, self.MAX_LORA_COUNT):
-            kwargs[f"lora_name_{i}"] = kwargs[f"lora_name_{i}"]["content"]
+
         # Extract values from kwargs
         loras = [kwargs.get(f"lora_name_{i}") for i in range(1, lora_count + 1)]
 
@@ -451,7 +331,7 @@ class TSC_LoRA_Stacker:
         # If lora_stack is not None, extend the loras list with lora_stack
         if lora_stack is not None:
             loras.extend([l for l in lora_stack if l[0] != "None"])
-        #print(f"\033[36mloras////:{(loras,)}\033[0m") 
+
         return (loras,)
 
 #=======================================================================================================================
@@ -2464,7 +2344,7 @@ class TSC_XYplot:
             Y_value = [""]
 
         # If types are the same exit. If one isn't "Nothing", print error
-        if X_type != "XY_Capsule" and (X_type == Y_type):
+        if X_type != "XY_Capsule" and (X_type == Y_type) and X_type not in ["Positive Prompt S/R", "Negative Prompt S/R"]:
             if X_type != "Nothing":
                 print(f"{error('XY Plot Error:')} X and Y input types must be different.")
             return (None,)
@@ -4150,7 +4030,7 @@ class TSC_HighRes_Fix:
     @classmethod
     def INPUT_TYPES(cls):
 
-        return {"required": {"upscale_type": (["latent","pixel"],),
+        return {"required": {"upscale_type": (["latent","pixel","both"],),
                              "hires_ckpt_name": (["(use same)"] + folder_paths.get_filename_list("checkpoints"),),
                              "latent_upscaler": (cls.latent_upscalers,),
                              "pixel_upscaler": (cls.pixel_upscalers,),
@@ -4250,6 +4130,17 @@ class TSC_HighRes_Fix:
             elif upscale_type == "pixel":
                 pixel_upscale_model = UpscaleModelLoader().load_model(pixel_upscaler)[0]
 
+            elif upscale_type == "both":
+                latent_upscale_function = LatentUpscaleBy
+                latent_upscaler = self.default_latent_upscalers[0]
+                pixel_upscale_model = UpscaleModelLoader().load_model(pixel_upscaler)[0]
+
+                if hires_ckpt_name == "(use same)":
+                    clear_cache(my_unique_id, 0, "ckpt")
+                else:
+                    latent_upscale_model, _, _ = \
+                        load_checkpoint(hires_ckpt_name, my_unique_id, output_vae=False, cache=1, cache_overwrite=True)
+
         control_net = ControlNetLoader().load_controlnet(control_net_name)[0] if use_controlnet is True else None
 
         # Construct the script output
@@ -4313,33 +4204,186 @@ class TSC_LoRA_Stack2String:
         output = ' '.join(f"<lora:{tup[0]}:{tup[1]}:{tup[2]}>" for tup in lora_stack)
         return (output,)
 
+#################################################################
+#################################################################
+#                                                          ED
+#################################################################
+#################################################################
 
-  
-###################################
-##                            ED                             ##
-###################################
-# def send_log_ed(message):
-    # PromptServer.instance.send_sync("ed-node-feedback", {"node_id": 1, "widget_name": "log", "type": "text", "data": message})
+import nodes
+from server import PromptServer
+from PIL import Image, ImageOps, ImageSequence
 
-def model_merge_simple(model1, model2, ratio):
-    m = model1.clone()
-    kp = model2.get_key_patches("diffusion_model.")
-    for k in kp:
-        m.add_patches({k: kp[k]}, 1.0 - ratio, ratio)
-    return (m)
+############## ED rgthree Context embedding
+_all_ed_context_input_output_data = {
+  "base_ctx": ("base_ctx", "RGTHREE_CONTEXT", "CONTEXT"),
+  "model": ("model", "MODEL", "MODEL"),
+  "refiner_model": ("refiner_model", "MODEL", "REFINER_MODEL"),
+  "clip": ("clip", "CLIP", "CLIP"),
+  "refiner_clip": ("refiner_clip", "CLIP", "REFINER_CLIP"),
+  "vae": ("vae", "VAE", "VAE"),
+  "positive": ("positive", "CONDITIONING", "POSITIVE"),
+  "refiner_positive": ("positive", "CONDITIONING", "REFINER_POSITIVE"),
+  "negative": ("negative", "CONDITIONING", "NEGATIVE"),
+  "refiner_negative": ("negative", "CONDITIONING", "REFINER_NEGATIVE"),
+  "latent": ("latent", "LATENT", "LATENT"),
+  "images": ("images", "IMAGE", "IMAGE"),
+  "seed": ("seed", "INT", "SEED"),
+  "steps": ("steps", "INT", "STEPS"),
+  "step_refiner": ("step_refiner", "INT", "STEP_REFINER"),
+  "cfg": ("cfg", "FLOAT", "CFG"),
+  "ckpt_name": ("ckpt_name", folder_paths.get_filename_list("checkpoints"), "CKPT_NAME"),
+  "sampler": ("sampler", comfy.samplers.KSampler.SAMPLERS, "SAMPLER"),
+  "scheduler": ("scheduler", comfy.samplers.KSampler.SCHEDULERS, "SCHEDULER"),
+  "clip_width": ("clip_width", "INT", "CLIP_WIDTH"),
+  "clip_height": ("clip_height", "INT", "CLIP_HEIGHT"),
+  "text_pos_g": ("text_pos_g", "STRING", "TEXT_POS_G"),
+  "text_pos_l": ("text_pos_l", "STRING", "TEXT_POS_L"),
+  "text_neg_g": ("text_neg_g", "STRING", "TEXT_NEG_G"),
+  "text_neg_l": ("text_neg_l", "STRING", "TEXT_NEG_L"),
+  "mask": ("mask", "MASK", "MASK"),
+  "control_net": ("control_net", "CONTROL_NET", "CONTROL_NET"),
+}
 
-def clip_merge_simple(clip1, clip2, ratio):
-    m = clip1.clone()
-    kp = clip2.get_key_patches()
-    for k in kp:
-        if k.endswith(".position_ids") or k.endswith(".logit_scale"):
+def new_context_ed(base_ctx, **kwargs):
+    """Creates a new context from the provided data, with an optional base ctx to start."""
+    context = base_ctx if base_ctx is not None else None
+    new_ctx = {}
+    for key in _all_ed_context_input_output_data:
+        if key == "base_ctx":
             continue
-        m.add_patches({k: kp[k]}, 1.0 - ratio, ratio)
-    return (m)
+        v = kwargs[key] if key in kwargs else None
+        new_ctx[key] = v if v is not None else context[key] if context is not None and key in context else None
+    return new_ctx
+
+def context_2_tuple_ed(ctx, inputs_list=None):
+    """Returns a tuple for returning in the order of the inputs list."""
+    if inputs_list is None:
+        inputs_list = _all_ed_context_input_output_data.keys()
+    tup_list = [ctx,]
+    for key in inputs_list:
+        if key == "base_ctx":
+            continue
+        tup_list.append(ctx[key] if ctx is not None and key in ctx else None)
+    return tuple(tup_list)
+
+#======= CASHE
+cashe_ed = {
+    "control_net": [],
+    "ultra_bbox_segm_detector": [],
+    "sam_model": [],
+    "ultimate_sd_upscaler": []
+}
+
+def cashload_ed(cashetype, model_name):
+    global cashe_ed
+    for entry in cashe_ed[cashetype]:
+        if entry[0] == model_name:
+            print(f"\033[36mED node use {cashetype} cashe: {entry[0]}\033[0m")
+            return entry[1]
+    return None
+    
+def cashsave_ed(cashetype, model_name, model, max_cashe):
+    global cashe_ed
+    if len(cashe_ed[cashetype])>= max_cashe:
+        cashe_ed[cashetype].pop(0)
+    cashe_ed[cashetype].append([model_name, model])
+    print(f"\033[36mED node save {cashetype} cashe: {model_name}\033[0m")
+    return
+
+
+########################################################################################################################
+
+def populate_items(names, type):
+    idx = None
+    item_name = None
+    for idx, item_name in enumerate(names):
+        
+        file_name = os.path.splitext(item_name)[0]
+        file_path = folder_paths.get_full_path(type, item_name)
+
+        if file_path is None:
+            names[idx] = {
+                "content": item_name,
+                "image": None,
+            }
+            continue
+
+        file_path_no_ext = os.path.splitext(file_path)[0]
+
+        for ext in ["png", "jpg", "jpeg", "preview.png"]:
+            has_image = os.path.isfile(file_path_no_ext + "." + ext)
+            if has_image:
+                item_image = f"{file_name}.{ext}"
+                break
+
+        names[idx] = {
+            "content": item_name,
+            "image": f"{type}/{item_image}" if has_image else None,
+        }
+    #names.sort(key=lambda i: i["content"].lower())
+
+# TSC LoRA Stacker
+class TSC_LoRA_Stacker_ED:
+    modes = ["simple", "advanced"]
+    MAX_LORA_COUNT = 9
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        loras = ["None"] + folder_paths.get_filename_list("loras")
+        inputs = {
+            "required": {
+                "input_mode": (cls.modes,),
+                "lora_count": ("INT", {"default": 3, "min": 0, "max": cls.MAX_LORA_COUNT, "step": 1}),
+            }
+        }
+        
+        inputs["required"][f"lora_name_{1}"] = (loras,)
+        populate_items(inputs["required"][f"lora_name_{1}"][0], "loras")
+        lora_name_array = inputs["required"][f"lora_name_{1}"]
+        for i in range(1, cls.MAX_LORA_COUNT):
+            inputs["required"][f"lora_name_{i}"] = lora_name_array
+            inputs["required"][f"lora_wt_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+            inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+            inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+            #print(f"\033[36mlora stacker{i}////:{names}\033[0m")            
+
+        inputs["optional"] = {
+            "lora_stack": ("LORA_STACK",)
+        }
+        return inputs
+
+    RETURN_TYPES = ("LORA_STACK",)
+    RETURN_NAMES = ("LORA_STACK",)
+    FUNCTION = "lora_stacker_ed"
+    CATEGORY = "Efficiency Nodes/Stackers"
+
+    def lora_stacker_ed(self, input_mode, lora_count, lora_stack=None, **kwargs):
+        for i in range(1, self.MAX_LORA_COUNT):
+            kwargs[f"lora_name_{i}"] = kwargs[f"lora_name_{i}"]["content"]
+        # Extract values from kwargs
+        loras = [kwargs.get(f"lora_name_{i}") for i in range(1, lora_count + 1)]
+
+        # Create a list of tuples using provided parameters, exclude tuples with lora_name as "None"
+        if input_mode == "simple":
+            weights = [kwargs.get(f"lora_wt_{i}") for i in range(1, lora_count + 1)]
+            loras = [(lora_name, lora_weight, lora_weight) for lora_name, lora_weight in zip(loras, weights) if
+                     lora_name != "None"]
+        else:
+            model_strs = [kwargs.get(f"model_str_{i}") for i in range(1, lora_count + 1)]
+            clip_strs = [kwargs.get(f"clip_str_{i}") for i in range(1, lora_count + 1)]
+            loras = [(lora_name, model_str, clip_str) for lora_name, model_str, clip_str in
+                     zip(loras, model_strs, clip_strs) if lora_name != "None"]
+
+        # If lora_stack is not None, extend the loras list with lora_stack
+        if lora_stack is not None:
+            loras.extend([l for l in lora_stack if l[0] != "None"])
+        #print(f"\033[36mloras////:{(loras,)}\033[0m") 
+        return (loras,)
 
 ########################################################################################################################
 # TSC Efficient Loader_ED
-class TSC_EfficientLoader_ED:
+class TSC_EfficientLoader_ED():
 
     Paint_Mode = {
         "✍️ Txt2Img": 1,
@@ -4620,7 +4664,6 @@ class TSC_EfficientLoader_ED:
 
 ########################################################################################################################
 # LoadImage_ED
-
 prompt_blacklist = set([
     'filename_prefix', 'file'
 ])
@@ -5116,24 +5159,24 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
                return_with_leftover_noise=None, sampler_type="regular")
 
 
+
+########################################################################################################################
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
     #ED
     "Efficient Loader 💬ED": TSC_EfficientLoader_ED,
-#    "Eff. Loader SDXL 💬ED": TSC_EfficientLoaderSDXL_ED,
     "KSampler (Efficient) 💬ED": TSC_KSampler_ED,
-#    "KSampler SDXL (Eff.) 💬ED": TSC_KSamplerSDXL_ED,
     "KSampler TEXT (Eff.) 💬ED": TSC_KSamplerTEXT_ED,    
     "Load Image 💬ED": LoadImage_ED,
     "Control Net Script 💬ED": Control_Net_Script_ED,
-    "Embedding Stacker 💬ED": Embedding_Stacker_ED,    
+    "Embedding Stacker 💬ED": Embedding_Stacker_ED,
     
     "KSampler (Efficient)": TSC_KSampler,
     "KSampler Adv. (Efficient)":TSC_KSamplerAdvanced,
     "KSampler SDXL (Eff.)": TSC_KSamplerSDXL,
     "Efficient Loader": TSC_EfficientLoader,
     "Eff. Loader SDXL": TSC_EfficientLoaderSDXL,
-    "LoRA Stacker": TSC_LoRA_Stacker,
+    "LoRA Stacker": TSC_LoRA_Stacker_ED,
     "Control Net Stacker": TSC_Control_Net_Stacker,
     "Apply ControlNet Stack": TSC_Apply_ControlNet_Stack,
     "Unpack SDXL Tuple": TSC_Unpack_SDXL_Tuple,
@@ -5167,7 +5210,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 
-#==========================================================================================#
+#=================================================================================
 ##################################                FaceDetailer_ED       ##################################
 
 MAX_CASHE_ED_FACE = 2
@@ -5618,7 +5661,3 @@ try:
 
 except ImportError:
     print(f"{warning('Efficiency Nodes Warning:')} Failed to import python package 'simpleeval'; related nodes disabled.\n")
-    
-    
-    
-  
