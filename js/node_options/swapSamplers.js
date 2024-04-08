@@ -179,8 +179,8 @@ app.registerExtension({
     name: "efficiency.SwapSamplers",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (["KSampler (Efficient)", "KSampler Adv. (Efficient)", "KSampler SDXL (Eff.)"].includes(nodeData.name)) {
-            addMenuHandler(nodeType, function (insertOption) {
-                insertOption({
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
+                options.unshift({
                     content: "🔄 Swap with...",
                     has_submenu: true,
                     callback: showSwapMenu

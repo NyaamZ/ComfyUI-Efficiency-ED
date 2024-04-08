@@ -7,6 +7,11 @@ const SEED_BEHAVIOR_INCREMENT = 'Increment';
 const SEED_BEHAVIOR_DECREMENT = 'Decrement';
 
 const NODE_WIDGET_MAP = {
+	"Efficient Loader 💬ED": "seed",
+	// "Eff. Loader SDXL 💬ED": "seed",
+	"KSampler (Efficient) 💬ED": "seed",
+	// "KSampler SDXL (Eff.) 💬ED": "noise_seed",
+	"KSampler TEXT (Eff.) 💬ED": "seed",
     "KSampler (Efficient)": "seed",
     "KSampler Adv. (Efficient)": "noise_seed",
     "KSampler SDXL (Eff.)": "noise_seed",
@@ -213,7 +218,7 @@ app.registerExtension({
     name: "efficiency.seedcontrol",
     async beforeRegisterNodeDef(nodeType, nodeData, _app) {
         if (NODE_WIDGET_MAP[nodeData.name]) {
-            addMenuHandler(nodeType, function (insertOption) {
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
                 // Check conditions before showing the seed behavior option
                 let showSeedOption = true;
 
@@ -232,7 +237,7 @@ app.registerExtension({
                 }
 
                 if (showSeedOption) {
-                    insertOption({
+                    options.unshift({
                         content: "🌱 Seed behavior...",
                         has_submenu: true,
                         callback: showSeedBehaviorMenu

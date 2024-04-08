@@ -10,7 +10,11 @@ const connectionMap = {
     "Noise Control Script": ["input & output", 0],
     "HighRes-Fix Script": ["input & output", 0],
     "Tiled Upscaler Script": ["input & output", 0],
-    "AnimateDiff Script": ["output", 0]
+    "AnimateDiff Script": ["output", 0],
+	"Control Net Script 💬ED": ["output", 0],
+	"KSampler (Efficient) 💬ED": ["input", 2],
+	"KSampler SDXL (Eff.) 💬ED": ["input", 2],
+	"KSampler TEXT (Eff.) 💬ED": ["input", 2]
 };
 
     /**
@@ -105,7 +109,7 @@ function getScriptOptions(nodeType, node) {
         "Noise Control Script",
         "HighRes-Fix Script",
         "Tiled Upscaler Script",
-        "AnimateDiff Script"
+		"Control Net Script 💬ED"
     ];
 
     // Filter script types based on node type
@@ -139,8 +143,8 @@ app.registerExtension({
     name: "efficiency.addScripts",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (connectionMap[nodeData.name]) {
-            addMenuHandler(nodeType, function(insertOption) {
-                insertOption({
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
+                options.unshift({
                     content: "📜 Add script...",
                     has_submenu: true,
                     callback: showAddScriptMenu

@@ -32,7 +32,15 @@ export async function loadImage(url) {
 
 export function addMenuHandler(nodeType, cb) {
 
-    const GROUPED_MENU_ORDER = {
+	const getOpts = nodeType.prototype.getExtraMenuOptions;
+	nodeType.prototype.getExtraMenuOptions = function () {
+		const r = getOpts.apply(this, arguments);
+		cb.apply(this, arguments);
+		return r;
+	};
+
+/*     
+	const GROUPED_MENU_ORDER = {
         "🔄 Swap with...": 0,
         "⛓ Add link...": 1,
         "📜 Add script...": 2,
@@ -42,8 +50,8 @@ export function addMenuHandler(nodeType, cb) {
         "✏️ Add 𝚇 input...": 6,
         "✏️ Add 𝚈 input...": 7
     };
-
-    const originalGetOpts = nodeType.prototype.getExtraMenuOptions;
+	
+	const originalGetOpts = nodeType.prototype.getExtraMenuOptions;
 
     nodeType.prototype.getExtraMenuOptions = function () {
         let r = originalGetOpts ? originalGetOpts.apply(this, arguments) || [] : [];
@@ -72,6 +80,7 @@ export function addMenuHandler(nodeType, cb) {
 
         return r;
     };
+	*/
 }
 
 export function findWidgetByName(node, widgetName) {

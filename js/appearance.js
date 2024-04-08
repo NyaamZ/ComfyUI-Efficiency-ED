@@ -12,6 +12,14 @@ const COLOR_THEMES = {
 };
 
 const NODE_COLORS = {
+	"Efficient Loader 💬ED": "random",
+	// "Eff. Loader SDXL 💬ED": "random",
+	"KSampler (Efficient) 💬ED": "random",
+	// "KSampler SDXL (Eff.) 💬ED": "random",
+	"KSampler TEXT (Eff.) 💬ED": "random",
+	"Load Image 💬ED": "blue",
+	"Control Net Script 💬ED": "green",
+	"Embedding Stacker 💬ED": "blue",
     "KSampler (Efficient)": "random",
     "KSampler Adv. (Efficient)": "random",
     "KSampler SDXL (Eff.)": "random",

@@ -167,8 +167,8 @@ app.registerExtension({
         const linkType = linkTypes[nodeData.name];
         
         if (linkType) {
-            addMenuHandler(nodeType, function(insertOption) {
-                insertOption({
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
+                options.unshift({
                     content: "⛓ Add link...",
                     has_submenu: true,
                     callback: (value, options, e, menu, node) => showAddLinkMenuCommon(value, options, e, menu, node, linkType)

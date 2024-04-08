@@ -56,6 +56,60 @@ function toggleWidget_2(node, widget, show = false, suffix = "") {
     }
 }
 
+/////////////////////////////////////////////////////////////////////////// ED
+let store_previous_noise = 0;
+function change_TXT2IMG_denoise(node, change = true, suffix = "") {
+	//console.log("ED_log TXT2IMG >>" + change);
+	const linkk = node.outputs[0].links
+	if (linkk) {
+		for (const l of linkk) {
+			const linkInfo = app.graph.links[l];
+			const n = node.graph.getNodeById(linkInfo.target_id);
+			//console.log("ED_log node type:" + n.type);	
+			if (n.type.indexOf('KSampler') != -1) {
+				let w = findWidgetByName(n, 'denoise');
+				if (change){
+					if (w.value != 1.0) { 
+						store_previous_noise = w.value;
+						w.value = 1.0;
+					}
+				}else{
+					if (w.value == 1.0 && store_previous_noise != 0) { 
+						w.value = store_previous_noise;
+					}
+				}
+				return
+			}
+			else if(n.type.indexOf('Context') != -1) {
+				const linkctx = n.outputs[0].links
+				if (linkctx) {
+					for (const l of linkctx) {
+						const linkInfo_ctx = app.graph.links[l];
+						const n_ctx = n.graph.getNodeById(linkInfo_ctx.target_id);
+						//console.log("ED_log node type:" + n.type);	
+						if (n_ctx.type.indexOf('KSampler') != -1) {
+							let w = findWidgetByName(n_ctx, 'denoise');
+							if (change){
+								if (w.value != 1.0) { 
+									store_previous_noise = w.value;
+									w.value = 1.0;
+								}
+							}else{
+								if (w.value == 1.0 && store_previous_noise != 0) { 
+									w.value = store_previous_noise;
+								}
+							}
+							return
+						}
+					}
+				}
+			}
+		}		
+	}
+}
+	
+
+
 // New function to handle widget visibility based on input_mode
 function handleInputModeWidgetsVisibility(node, inputModeValue) {
     // Utility function to generate widget names up to a certain count
@@ -259,7 +313,35 @@ function xyCkptRefinerOptionsRemove(widget, node) {
 // Create a map of node titles to their respective widget handlers
 const nodeWidgetHandlers = {
     "Efficient Loader": {
-        'lora_name': handleEfficientLoaderLoraName
+        'lora_name': handleEfficientLoaderLoraName,
+		'paint_mode': handleEfficientLoaderPaintMode_ED
+    },
+    "Efficient Loader 💬ED": {
+		'paint_mode': handleEfficientLoaderPaintMode_ED
+    },
+    // "Eff. Loader SDXL 💬ED": {
+		// 'paint_mode': handleEfficientLoaderPaintMode_ED,
+		// 'refiner_ckpt_name': handleEffLoaderSDXLRefinerCkptName
+    // },
+    "KSampler (Efficient) 💬ED": {
+        'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED
+    },
+    // "KSampler SDXL (Eff.) 💬ED": {
+        // 'set_seed_cfg_sampler': handleEfficientSamplerSetNoiseSeed_ED
+    // },
+    "KSampler TEXT (Eff.) 💬ED": {
+        'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED
+    },
+	"FaceDetailer 💬ED": {
+        'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED
+    },
+    "Embedding Stacker 💬ED": {
+        'positive_embeddings_count': handleEmbeddingStacker,
+		'negative_embeddings_count': handleEmbeddingStacker
+    },
+	"Ultimate SD Upscale 💬ED": {
+        'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED,
+		'set_tile_size_from_image_size': handleUltimateSDUpscalerTileSize_ED
     },
     "Eff. Loader SDXL": {
         'refiner_ckpt_name': handleEffLoaderSDXLRefinerCkptName
@@ -333,6 +415,98 @@ function handleEfficientLoaderLoraName(node, widget) {
     } else {
         toggleWidget_2(node, findWidgetByName(node, 'lora_model_strength'), true);
         toggleWidget_2(node, findWidgetByName(node, 'lora_clip_strength'), true);
+    }
+}
+
+function handleEfficientLoaderLoraName_ED(node, widget) {
+    if (widget.value === 'None') {       
+        toggleWidget_2(node, findWidgetByName(node, 'lora_weight'));
+    } else {
+        toggleWidget_2(node, findWidgetByName(node, 'lora_weight'), true);
+    }
+}
+
+function handleEfficientLoaderPaintMode_ED(node, widget) {
+    if (widget.value == '✍️ Txt2Img') {
+		change_TXT2IMG_denoise(node, true);
+    } else {
+        change_TXT2IMG_denoise(node, false);
+    }
+}
+
+
+function handleEfficientSamplerSetSeed_ED(node, widget) {
+    if (widget.value === "from context") {
+		const adjustment  = node.size[1];
+        toggleWidget(node, findWidgetByName(node, 'seed'));
+        toggleWidget(node, findWidgetByName(node, 'cfg'));
+		toggleWidget(node, findWidgetByName(node, 'sampler_name'));
+		toggleWidget(node, findWidgetByName(node, 'scheduler'));
+		node.setSize([node.size[0], adjustment]);
+    } else {
+		const adjustment  = node.size[1];
+        toggleWidget(node, findWidgetByName(node, 'seed'), true);
+        toggleWidget(node, findWidgetByName(node, 'cfg'), true);
+        toggleWidget(node, findWidgetByName(node, 'sampler_name'), true);
+        toggleWidget(node, findWidgetByName(node, 'scheduler'), true);
+		if (node.size[1] < adjustment){
+			node.setSize([node.size[0], adjustment]);
+		}
+    }
+}
+
+/* function handleEfficientSamplerSetNoiseSeed_ED(node, widget) {
+    if (widget.value === "from context") {       
+		const adjustment  = node.size[1];
+        toggleWidget(node, findWidgetByName(node, 'noise_seed'));
+        toggleWidget(node, findWidgetByName(node, 'cfg'));
+		toggleWidget(node, findWidgetByName(node, 'sampler_name'));
+		toggleWidget(node, findWidgetByName(node, 'scheduler'));
+		node.setSize([node.size[0], adjustment]);
+    } else {
+		const adjustment  = node.size[1];
+        toggleWidget(node, findWidgetByName(node, 'noise_seed'), true);
+        toggleWidget(node, findWidgetByName(node, 'cfg'), true);
+        toggleWidget(node, findWidgetByName(node, 'sampler_name'), true);
+        toggleWidget(node, findWidgetByName(node, 'scheduler'), true);
+		if (node.size[1] < adjustment){
+			node.setSize([node.size[0], adjustment]);
+		}
+    }
+} */
+
+function handleUltimateSDUpscalerTileSize_ED(node, widget) {
+    if (widget.value == true) {       
+		const adjustment  = node.size[1];
+        toggleWidget(node, findWidgetByName(node, 'tile_width'));
+        toggleWidget(node, findWidgetByName(node, 'tile_height'));
+		node.setSize([node.size[0], adjustment]);
+    } else {
+		const adjustment  = node.size[1];
+        toggleWidget(node, findWidgetByName(node, 'tile_width'), true);
+        toggleWidget(node, findWidgetByName(node, 'tile_height'), true);
+		if (node.size[1] < adjustment){
+			node.setSize([node.size[0], adjustment]);
+		}
+    }
+}
+
+function handleEmbeddingStacker(node, widget) {
+	const posORneg = widget.name.substr(0, 8);
+	//console.log("widget.name.substr:" + posORneg);
+
+    for (let i = 1; i <= 9; i++) {
+        const firstWidget = findWidgetByName(node, `${posORneg}_embedding_${i}`);
+        const secondWidget = findWidgetByName(node, `${posORneg}_emphasis_${i}`);
+
+        if (i <= widget.value) {
+			toggleWidget(node, firstWidget, true);   
+            toggleWidget(node, secondWidget, true);
+        }
+        else {
+            toggleWidget(node, firstWidget, false);
+            toggleWidget(node, secondWidget, false);
+        }
     }
 }
 
@@ -452,7 +626,7 @@ function handleHiResFixScript(node, widget) {
         toggleWidget(node, findWidgetByName(node, 'preprocessor_imgs'));
 
         toggleWidget(node, findWidgetByName(node, 'pixel_upscaler'), true);
-        
+		
     } else if (findWidgetByName(node, 'upscale_type').value === "both") {
         toggleWidget(node, findWidgetByName(node, 'pixel_upscaler'), true);
         toggleWidget(node, findWidgetByName(node, 'hires_ckpt_name'), true);

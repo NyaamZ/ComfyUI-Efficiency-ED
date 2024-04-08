@@ -72,17 +72,17 @@ app.registerExtension({
     name: "efficiency.addXYinputs",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (nodeData.name === "XY Plot") {
-            addMenuHandler(nodeType, function(insertOption) {
-                insertOption({
-                    content: "✏️ Add 𝚇 input...",
-                    has_submenu: true,
-                    callback: (value, options, e, menu, node) => showAddXYInputMenu('X', e, menu, node)
-                });
-                insertOption({
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
+				options.unshift({
                     content: "✏️ Add 𝚈 input...",
                     has_submenu: true,
                     callback: (value, options, e, menu, node) => showAddXYInputMenu('Y', e, menu, node)
                 });
+                options.unshift({
+                    content: "✏️ Add 𝚇 input...",
+                    has_submenu: true,
+                    callback: (value, options, e, menu, node) => showAddXYInputMenu('X', e, menu, node)
+                });                
             });
         }
     },

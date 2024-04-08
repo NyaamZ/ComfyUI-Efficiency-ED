@@ -1,4 +1,4 @@
-import { app } from "../../../scripts/app.js";
+/* import { app } from "../../../scripts/app.js";
 import { addMenuHandler } from "./common/utils.js";
 import { findWidgetByName } from "./common/utils.js";
 
@@ -123,8 +123,8 @@ app.registerExtension({
     name: "efficiency.SwapLoaders",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         if (["Efficient Loader", "Eff. Loader SDXL"].includes(nodeData.name)) {
-            addMenuHandler(nodeType, function (insertOption) {
-                insertOption({
+            addMenuHandlerEd(nodeType, function (_, options) {// Here, we are calling addMenuHandler
+                options.unshift({
                     content: "🔄 Swap with...",
                     has_submenu: true,
                     callback: showSwapMenu
@@ -133,3 +133,4 @@ app.registerExtension({
         }
     },
 });
+ */

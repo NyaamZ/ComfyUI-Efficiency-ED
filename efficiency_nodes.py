@@ -23,6 +23,11 @@ my_dir = os.path.dirname(os.path.abspath(__file__))
 custom_nodes_dir = os.path.abspath(os.path.join(my_dir, '..'))
 comfy_dir = os.path.abspath(os.path.join(my_dir, '..', '..'))
 
+################ ED
+import nodes
+from server import PromptServer
+from PIL import Image, ImageOps, ImageSequence
+
 # Construct the path to the font file
 font_path = os.path.join(my_dir, 'arial.ttf')
 
@@ -238,6 +243,85 @@ class TSC_EfficientLoaderSDXL(TSC_EfficientLoader):
                         batch_size, lora_stack=lora_stack, cnet_stack=cnet_stack, refiner_name=refiner_ckpt_name,
                         ascore=(positive_ascore, negative_ascore), prompt=prompt, my_unique_id=my_unique_id, loader_type="sdxl")
 
+
+############## ED rgthree Context embedding
+
+_all_ed_context_input_output_data = {
+  "base_ctx": ("base_ctx", "RGTHREE_CONTEXT", "CONTEXT"),
+  "model": ("model", "MODEL", "MODEL"),
+  "refiner_model": ("refiner_model", "MODEL", "REFINER_MODEL"),
+  "clip": ("clip", "CLIP", "CLIP"),
+  "refiner_clip": ("refiner_clip", "CLIP", "REFINER_CLIP"),
+  "vae": ("vae", "VAE", "VAE"),
+  "positive": ("positive", "CONDITIONING", "POSITIVE"),
+  "refiner_positive": ("positive", "CONDITIONING", "REFINER_POSITIVE"),
+  "negative": ("negative", "CONDITIONING", "NEGATIVE"),
+  "refiner_negative": ("negative", "CONDITIONING", "REFINER_NEGATIVE"),
+  "latent": ("latent", "LATENT", "LATENT"),
+  "images": ("images", "IMAGE", "IMAGE"),
+  "seed": ("seed", "INT", "SEED"),
+  "steps": ("steps", "INT", "STEPS"),
+  "step_refiner": ("step_refiner", "INT", "STEP_REFINER"),
+  "cfg": ("cfg", "FLOAT", "CFG"),
+  "ckpt_name": ("ckpt_name", folder_paths.get_filename_list("checkpoints"), "CKPT_NAME"),
+  "sampler": ("sampler", comfy.samplers.KSampler.SAMPLERS, "SAMPLER"),
+  "scheduler": ("scheduler", comfy.samplers.KSampler.SCHEDULERS, "SCHEDULER"),
+  "clip_width": ("clip_width", "INT", "CLIP_WIDTH"),
+  "clip_height": ("clip_height", "INT", "CLIP_HEIGHT"),
+  "text_pos_g": ("text_pos_g", "STRING", "TEXT_POS_G"),
+  "text_pos_l": ("text_pos_l", "STRING", "TEXT_POS_L"),
+  "text_neg_g": ("text_neg_g", "STRING", "TEXT_NEG_G"),
+  "text_neg_l": ("text_neg_l", "STRING", "TEXT_NEG_L"),
+  "mask": ("mask", "MASK", "MASK"),
+  "control_net": ("control_net", "CONTROL_NET", "CONTROL_NET"),
+}
+
+def new_context_ed(base_ctx, **kwargs):
+    """Creates a new context from the provided data, with an optional base ctx to start."""
+    context = base_ctx if base_ctx is not None else None
+    new_ctx = {}
+    for key in _all_ed_context_input_output_data:
+        if key == "base_ctx":
+            continue
+        v = kwargs[key] if key in kwargs else None
+        new_ctx[key] = v if v is not None else context[key] if context is not None and key in context else None
+    return new_ctx
+
+def context_2_tuple_ed(ctx, inputs_list=None):
+    """Returns a tuple for returning in the order of the inputs list."""
+    if inputs_list is None:
+        inputs_list = _all_ed_context_input_output_data.keys()
+    tup_list = [ctx,]
+    for key in inputs_list:
+        if key == "base_ctx":
+            continue
+        tup_list.append(ctx[key] if ctx is not None and key in ctx else None)
+    return tuple(tup_list)
+
+#======= CASHE
+cashe_ed = {
+    "control_net": [],
+    "ultra_bbox_segm_detector": [],
+    "sam_model": [],
+    "ultimate_sd_upscaler": []
+}
+
+def cashload_ed(cashetype, model_name):
+    global cashe_ed
+    for entry in cashe_ed[cashetype]:
+        if entry[0] == model_name:
+            print(f"\033[36mED node use {cashetype} cashe: {entry[0]}\033[0m")
+            return entry[1]
+    return None
+    
+def cashsave_ed(cashetype, model_name, model, max_cashe):
+    global cashe_ed
+    if len(cashe_ed[cashetype])>= max_cashe:
+        cashe_ed[cashetype].pop(0)
+    cashe_ed[cashetype].append([model_name, model])
+    print(f"\033[36mED node save {cashetype} cashe: {model_name}\033[0m")
+    return
+
 #=======================================================================================================================
 # TSC Unpack SDXL Tuple
 class TSC_Unpack_SDXL_Tuple:
@@ -282,9 +366,40 @@ class TSC_Pack_SDXL_Tuple:
                  refiner_model, refiner_clip, refiner_positive, refiner_negative),)
 
 ########################################################################################################################
+
+def populate_items(names, type):
+    idx = None
+    item_name = None
+    for idx, item_name in enumerate(names):
+        
+        file_name = os.path.splitext(item_name)[0]
+        file_path = folder_paths.get_full_path(type, item_name)
+
+        if file_path is None:
+            names[idx] = {
+                "content": item_name,
+                "image": None,
+            }
+            continue
+
+        file_path_no_ext = os.path.splitext(file_path)[0]
+
+        for ext in ["png", "jpg", "jpeg", "preview.png"]:
+            has_image = os.path.isfile(file_path_no_ext + "." + ext)
+            if has_image:
+                item_image = f"{file_name}.{ext}"
+                break
+
+        names[idx] = {
+            "content": item_name,
+            "image": f"{type}/{item_image}" if has_image else None,
+        }
+    #names.sort(key=lambda i: i["content"].lower())
+
 # TSC LoRA Stacker
 class TSC_LoRA_Stacker:
     modes = ["simple", "advanced"]
+    MAX_LORA_COUNT = 9
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -292,15 +407,19 @@ class TSC_LoRA_Stacker:
         inputs = {
             "required": {
                 "input_mode": (cls.modes,),
-                "lora_count": ("INT", {"default": 3, "min": 0, "max": 50, "step": 1}),
+                "lora_count": ("INT", {"default": 3, "min": 0, "max": cls.MAX_LORA_COUNT, "step": 1}),
             }
         }
-
-        for i in range(1, 50):
-            inputs["required"][f"lora_name_{i}"] = (loras,)
+        
+        inputs["required"][f"lora_name_{1}"] = (loras,)
+        populate_items(inputs["required"][f"lora_name_{1}"][0], "loras")
+        lora_name_array = inputs["required"][f"lora_name_{1}"]
+        for i in range(1, cls.MAX_LORA_COUNT):
+            inputs["required"][f"lora_name_{i}"] = lora_name_array
             inputs["required"][f"lora_wt_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+            #print(f"\033[36mlora stacker{i}////:{names}\033[0m")            
 
         inputs["optional"] = {
             "lora_stack": ("LORA_STACK",)
@@ -313,7 +432,8 @@ class TSC_LoRA_Stacker:
     CATEGORY = "Efficiency Nodes/Stackers"
 
     def lora_stacker(self, input_mode, lora_count, lora_stack=None, **kwargs):
-
+        for i in range(1, self.MAX_LORA_COUNT):
+            kwargs[f"lora_name_{i}"] = kwargs[f"lora_name_{i}"]["content"]
         # Extract values from kwargs
         loras = [kwargs.get(f"lora_name_{i}") for i in range(1, lora_count + 1)]
 
@@ -331,7 +451,7 @@ class TSC_LoRA_Stacker:
         # If lora_stack is not None, extend the loras list with lora_stack
         if lora_stack is not None:
             loras.extend([l for l in lora_stack if l[0] != "None"])
-
+        #print(f"\033[36mloras////:{(loras,)}\033[0m") 
         return (loras,)
 
 #=======================================================================================================================
@@ -2344,7 +2464,7 @@ class TSC_XYplot:
             Y_value = [""]
 
         # If types are the same exit. If one isn't "Nothing", print error
-        if X_type != "XY_Capsule" and (X_type == Y_type) and X_type not in ["Positive Prompt S/R", "Negative Prompt S/R"]:
+        if X_type != "XY_Capsule" and (X_type == Y_type):
             if X_type != "Nothing":
                 print(f"{error('XY Plot Error:')} X and Y input types must be different.")
             return (None,)
@@ -4030,7 +4150,7 @@ class TSC_HighRes_Fix:
     @classmethod
     def INPUT_TYPES(cls):
 
-        return {"required": {"upscale_type": (["latent","pixel","both"],),
+        return {"required": {"upscale_type": (["latent","pixel"],),
                              "hires_ckpt_name": (["(use same)"] + folder_paths.get_filename_list("checkpoints"),),
                              "latent_upscaler": (cls.latent_upscalers,),
                              "pixel_upscaler": (cls.pixel_upscalers,),
@@ -4130,17 +4250,6 @@ class TSC_HighRes_Fix:
             elif upscale_type == "pixel":
                 pixel_upscale_model = UpscaleModelLoader().load_model(pixel_upscaler)[0]
 
-            elif upscale_type == "both":
-                latent_upscale_function = LatentUpscaleBy
-                latent_upscaler = self.default_latent_upscalers[0]
-                pixel_upscale_model = UpscaleModelLoader().load_model(pixel_upscaler)[0]
-
-                if hires_ckpt_name == "(use same)":
-                    clear_cache(my_unique_id, 0, "ckpt")
-                else:
-                    latent_upscale_model, _, _ = \
-                        load_checkpoint(hires_ckpt_name, my_unique_id, output_vae=False, cache=1, cache_overwrite=True)
-
         control_net = ControlNetLoader().load_controlnet(control_net_name)[0] if use_controlnet is True else None
 
         # Construct the script output
@@ -4204,9 +4313,821 @@ class TSC_LoRA_Stack2String:
         output = ' '.join(f"<lora:{tup[0]}:{tup[1]}:{tup[2]}>" for tup in lora_stack)
         return (output,)
 
+
+  
+###################################
+##                            ED                             ##
+###################################
+# def send_log_ed(message):
+    # PromptServer.instance.send_sync("ed-node-feedback", {"node_id": 1, "widget_name": "log", "type": "text", "data": message})
+
+def model_merge_simple(model1, model2, ratio):
+    m = model1.clone()
+    kp = model2.get_key_patches("diffusion_model.")
+    for k in kp:
+        m.add_patches({k: kp[k]}, 1.0 - ratio, ratio)
+    return (m)
+
+def clip_merge_simple(clip1, clip2, ratio):
+    m = clip1.clone()
+    kp = clip2.get_key_patches()
+    for k in kp:
+        if k.endswith(".position_ids") or k.endswith(".logit_scale"):
+            continue
+        m.add_patches({k: kp[k]}, 1.0 - ratio, ratio)
+    return (m)
+
 ########################################################################################################################
+# TSC Efficient Loader_ED
+class TSC_EfficientLoader_ED:
+
+    Paint_Mode = {
+        "✍️ Txt2Img": 1,
+        "🦱 Img2Img": 2,
+        "🎨 Inpaint": 3,
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        types = {"required": { "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                              "vae_name": (["Baked VAE"] + folder_paths.get_filename_list("vae"),),
+                              "clip_skip": ("INT", {"default": -1, "min": -24, "max": -1, "step": 1}),
+                              #"lora_name": (["None"] + folder_paths.get_filename_list("loras"),),
+                              #"lora_weight": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),                              
+                              #"lora_clip_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),                              
+                              "paint_mode": ( list(TSC_EfficientLoader_ED.Paint_Mode.keys()), {"default": "✍️ Txt2Img"}),
+                              "batch_size": ("INT", {"default": 1, "min": 1, "max": 262144}),
+                              "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                              "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
+                              "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                              "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                              #"use_kohya_deep_shrink": ("BOOLEAN", {"default": False}),
+                              "positive": ("STRING", {"default": "CLIP_POSITIVE","multiline": True}),
+                              "negative": ("STRING", {"default": "CLIP_NEGATIVE", "multiline": True}),
+                              "token_normalization": (["none", "mean", "length", "length+mean"],),
+                              "weight_interpretation": (["comfy", "A1111", "compel", "comfy++", "down_weight"],),
+                              "image_width": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 1}),
+                              "image_height": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 1}),
+                              },
+                "optional": {
+                             "lora_stack": ("LORA_STACK", ),
+                             "cnet_stack": ("CONTROL_NET_STACK",),
+                             "pixels": ("IMAGE", ),
+                             "mask": ("MASK",)},
+                "hidden": { "prompt": "PROMPT",
+                            "my_unique_id": "UNIQUE_ID",
+                            "extra_pnginfo": "EXTRA_PNGINFO",}
+                }
+                
+        names = types["required"]["ckpt_name"][0]
+        populate_items(names, "checkpoints")
+        
+        return types
+
+    RETURN_TYPES = ("RGTHREE_CONTEXT", "MODEL", "DEPENDENCIES",)
+    RETURN_NAMES = ("CONTEXT", "MODEL", "DEPENDENCIES")
+    FUNCTION = "efficientloader_ed"
+    CATEGORY = "Efficiency Nodes/Loaders"
+        
+    def efficientloader_ed(self, vae_name, clip_skip, paint_mode, batch_size, 
+                        seed, cfg, sampler_name, scheduler,
+                        positive, negative, token_normalization, weight_interpretation, image_width,
+                        image_height, lora_stack=None, cnet_stack=None, pixels=None, mask=None, refiner_name="None",
+                        positive_refiner=None, negative_refiner=None, ascore=None, prompt=None, my_unique_id=None, extra_pnginfo=None, loader_type="regular", **kwargs):
+        
+        ckpt_name  = kwargs["ckpt_name"]["content"]
+        # Clean globally stored objects
+        globals_cleanup(prompt)
+
+        # Retrieve cache numbers
+        vae_cache, ckpt_cache, lora_cache, refn_cache = get_cache_numbers("Efficient Loader")        
+        lora_name = "None"
+        
+        # Embedding stacker process
+        lora_stack, positive, negative, positive_refiner, negative_refiner = embedding_process(lora_stack, positive, negative, positive_refiner, negative_refiner)
+        
+        if lora_name != "None" or lora_stack:
+            # Initialize an empty list to store LoRa parameters.
+            lora_params = []
+
+            # Check if lora_name is not the string "None" and if so, add its parameters.
+            if lora_name != "None":
+                lora_params.append((lora_name, lora_model_strength, lora_clip_strength))
+
+            # If lora_stack is not None or an empty list, extend lora_params with its items.
+            if lora_stack:
+                lora_params.extend(lora_stack)
+
+            # Load LoRa(s)
+            model, clip = load_lora(lora_params, ckpt_name, my_unique_id, cache=lora_cache, ckpt_cache=ckpt_cache, cache_overwrite=True)
+
+            if vae_name == "Baked VAE":
+                vae = get_bvae_by_ckpt_name(ckpt_name)
+        else:
+            global loaded_objects
+            loaded_objects["lora"] = []
+            #print(f"\033[36mlora stack is none\033[0m")
+            model, clip, vae = load_checkpoint(ckpt_name, my_unique_id, cache=ckpt_cache, cache_overwrite=True)
+            lora_params = None
+            
+        # Check for custom VAE
+        if vae_name != "Baked VAE":
+            vae = load_vae(vae_name, my_unique_id, cache=vae_cache, cache_overwrite=True)
+        
+        this_sync = True
+        multi_sync = False
+        tiled_vae_encode = False
+        vae_encode_tile_size = 512
+        
+        # GET PROPERTIES #
+        if extra_pnginfo and "workflow" in extra_pnginfo:
+            workflow = extra_pnginfo["workflow"]
+            for node in workflow["nodes"]:
+                if node["id"] == int(my_unique_id):
+                    #model_output_only = node["properties"]["Model output only (Not included ctx)"]
+                    this_sync = node["properties"]["Image size sync this"]
+                    multi_sync = node["properties"]["Image size sync MultiAreaConditioning"]      
+                    tiled_vae_encode = node["properties"]["Use tiled VAE encode"]           
+                    vae_encode_tile_size = round(node["properties"]["Tiled VAE encode tile size"] / 64) * 64
+                    if vae_encode_tile_size < 320:
+                        vae_encode_tile_size = 320
+                    if vae_encode_tile_size > 4096:
+                        vae_encode_tile_size = 4096                    
+                    break
+                    
+        #✍️ Txt2Img         
+        if paint_mode == "✍️ Txt2Img":
+            # Create Empty Latent
+            latent_t = torch.zeros([batch_size, 4, image_height // 8, image_width // 8]).cpu()
+            samples_latent = {"samples":latent_t}
+        else:
+            if pixels is None:
+                raise Exception("Efficient Loader ED: Img2Img or Inpaint mode requires an image.\n\n\n\n\n\n")
+            
+            #VAE Encode
+            if tiled_vae_encode:
+                latent_t = vae.encode_tiled(pixels[:,:,:,:3], tile_x=vae_encode_tile_size, tile_y=vae_encode_tile_size, )
+            else:
+                latent_t = vae.encode(pixels[:,:,:,:3])
+            k = {"samples":latent_t}
+            _, image_height, image_width, _ = pixels.shape
+            
+            # 🎨 Inpaint
+            if paint_mode == "🎨 Inpaint":
+                if  mask is None:
+                    raise Exception("Efficient Loader ED: Inpaint mode requires an Mask.\n\n\n\n\n\n")
+                k["noise_mask"] = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))            
+
+            if this_sync:
+                PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "image_width", "type": "text", "data": image_width})
+                PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "image_height", "type": "text", "data": image_height})   
+            
+            #RepeatLatentBatch
+            s = k.copy()
+            s_in = k["samples"]
+        
+            s["samples"] = s_in.repeat((batch_size, 1,1,1))
+            if "noise_mask" in k and k["noise_mask"].shape[0] > 1:
+                masks = k["noise_mask"]
+                if masks.shape[0] < s_in.shape[0]:
+                    masks = masks.repeat(math.ceil(s_in.shape[0] / masks.shape[0]), 1, 1, 1)[:s_in.shape[0]]
+                s["noise_mask"] = k["noise_mask"].repeat((batch_size, 1,1,1))
+            if "batch_index" in s:
+                offset = max(s["batch_index"]) - min(s["batch_index"]) + 1
+                s["batch_index"] = s["batch_index"] + [x + (i * offset) for i in range(1, batch_size) for x in s["batch_index"]]
+            
+            samples_latent = s
+        
+        ############################ changeXY MultiAreaConditioning
+        if workflow and multi_sync:
+            for node in workflow["nodes"]:
+                if node["type"] == "MultiAreaConditioning":
+                    node_id = node["id"]
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": node_id, "widget_name": "resolutionX", "type": "text", "data": image_width})
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": node_id, "widget_name": "resolutionY", "type": "text", "data": image_height})
+                    break
+                    
+        ############################# END EDITED ############################
+     
+        # Load Refiner Checkpoint if given
+        if refiner_name != "None":
+            refiner_model, refiner_clip, _ = load_checkpoint(refiner_name, my_unique_id, output_vae=False,
+                                                             cache=refn_cache, cache_overwrite=True, ckpt_type="refn")
+        else:
+            refiner_model = refiner_clip = None
+
+        # Extract clip_skips
+        refiner_clip_skip = clip_skip[1] if loader_type == "sdxl" else None
+        clip_skip = clip_skip[0] if loader_type == "sdxl" else clip_skip
+
+        # Encode prompt based on loader_type
+        positive_encoded, negative_encoded, clip, refiner_positive_encoded, refiner_negative_encoded, refiner_clip = \
+            encode_prompts(positive, negative, token_normalization, weight_interpretation, clip, clip_skip,
+                           refiner_clip, refiner_clip_skip, ascore, loader_type == "sdxl",
+                           image_width, image_height)
+        
+        # Refiner positive encoded 
+        if loader_type == "sdxl" and refiner_clip and refiner_clip_skip and ascore:
+            if positive_refiner:
+                refiner_positive_encoded = None
+                refiner_positive_encoded = bnk_adv_encode.AdvancedCLIPTextEncode().encode(refiner_clip, positive_refiner, token_normalization, weight_interpretation)[0]
+                refiner_positive_encoded = bnk_adv_encode.AddCLIPSDXLRParams().encode(refiner_positive_encoded, image_width, image_height, ascore[0])[0]
+            if negative_refiner:
+                refiner_negative_encoded = None
+                refiner_negative_encoded = bnk_adv_encode.AdvancedCLIPTextEncode().encode(refiner_clip, negative_refiner, token_normalization, weight_interpretation)[0]
+                refiner_negative_encoded = bnk_adv_encode.AddCLIPSDXLRParams().encode(refiner_negative_encoded, image_width, image_height, ascore[1])[0]
+
+        # Apply ControlNet Stack if given
+        if cnet_stack:
+            controlnet_conditioning = TSC_Apply_ControlNet_Stack().apply_cnet_stack(positive_encoded, negative_encoded, cnet_stack)
+            positive_encoded, negative_encoded = controlnet_conditioning[0], controlnet_conditioning[1]
+
+        # Data for XY Plot
+        dependencies = (vae_name, ckpt_name, clip, clip_skip, refiner_name, refiner_clip, refiner_clip_skip,
+                        positive, negative, token_normalization, weight_interpretation, ascore,
+                        image_width, image_height, lora_params, cnet_stack)
+
+        ### Debugging
+        ###print_loaded_objects_entries()
+        print_loaded_objects_entries(my_unique_id, prompt)
+        
+        context = new_context_ed(None, model=model, clip=clip, vae=vae, positive=positive_encoded, negative=negative_encoded, 
+                latent=samples_latent, images=pixels, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive, text_neg_g=negative)
+        
+        # elif loader_type == "sdxl":
+            # context = new_context_ed(None, model=None, refiner_model=refiner_model, clip=clip, refiner_clip=refiner_clip,
+            # vae=vae, positive=positive_encoded, refiner_positive=refiner_positive_encoded, refiner_negative=refiner_negative_encoded,
+            # negative=negative_encoded, latent=samples_latent, images=pixels, seed=seed, cfg=cfg, sampler=sampler_name, 
+            # scheduler=scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive, text_pos_l=positive_refiner, text_neg_g=negative, text_neg_l=negative_refiner)
+
+        return (context, model, dependencies)
+
+###########
+#=======================================================================================================================
+# TSC Efficient Loader SDXL ED
+# class TSC_EfficientLoaderSDXL_ED(TSC_EfficientLoader_ED):
+    # Paint_Mode = {
+        # "✍️ Txt2Img": 1,
+        # "🦱 Img2Img": 2,
+        # "🎨 Inpaint": 3,
+    # }
+    # @classmethod
+    # def INPUT_TYPES(s):
+        # types = {"required": { "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                              # "clip_skip": ("INT", {"default": -2, "min": -24, "max": -1, "step": 1}),
+                              # "refiner_ckpt_name": (["None"] + folder_paths.get_filename_list("checkpoints"),),
+                              # # "refiner_clip_skip": ("INT", {"default": -2, "min": -24, "max": -1, "step": 1}),
+                              # "positive_ascore": ("FLOAT", {"default": 6.0, "min": 0.0, "max": 1000.0, "step": 0.01}),
+                              # "negative_ascore": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 1000.0, "step": 0.01}),
+                              # "vae_name": (["Baked VAE"] + folder_paths.get_filename_list("vae"),),
+                              # # "lora_name": (["None"] + folder_paths.get_filename_list("loras"),),
+                              # # "lora_weight": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                              # "paint_mode": ( list(TSC_EfficientLoader_ED.Paint_Mode.keys()), {"default": "✍️ Txt2Img"}),
+                              # "batch_size": ("INT", {"default": 1, "min": 1, "max": 262144}),
+                              # "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                              # "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
+                              # "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                              # "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                              # # "use_kohya_deep_shrink": ("BOOLEAN", {"default": False}),
+                              # "positive": ("STRING", {"default": "CLIP_POSITIVE", "multiline": True}),
+                              # "positive_refiner": ("STRING", {"default": "CLIP_POSITIVE_REFINER", "multiline": True}),
+                              # "negative": ("STRING", {"default": "CLIP_NEGATIVE", "multiline": True}),
+                              # "negative_refiner": ("STRING", {"default": "CLIP_NEGATIVE_REFINER", "multiline": True}),
+                              # "token_normalization": (["none", "mean", "length", "length+mean"],),
+                              # "weight_interpretation": (["comfy", "A1111", "compel", "comfy++", "down_weight"],),
+                              # "image_width": ("INT", {"default": 1024, "min": 64, "max": MAX_RESOLUTION, "step": 1}),
+                              # "image_height": ("INT", {"default": 1024, "min": 64, "max": MAX_RESOLUTION, "step": 1})},
+                # "optional": {
+                             # "lora_stack": ("LORA_STACK", ),
+                             # "cnet_stack": ("CONTROL_NET_STACK",),
+                             # "pixels": ("IMAGE", ),
+                             # "mask": ("MASK",)},
+                # "hidden": { "prompt": "PROMPT",
+                            # "my_unique_id": "UNIQUE_ID",
+                            # "extra_pnginfo": "EXTRA_PNGINFO",}
+                # }
+        # names = types["required"]["ckpt_name"][0]
+        # populate_items(names, "checkpoints")
+        # return types
+
+    # RETURN_TYPES = ("RGTHREE_CONTEXT", "MODEL", "DEPENDENCIES",)
+    # RETURN_NAMES = ("CONTEXT", "MODEL", "DEPENDENCIES")
+    # FUNCTION = "efficientloaderSDXL_ed"
+    # CATEGORY = "Efficiency Nodes/Loaders"
+
+    # def efficientloaderSDXL_ed(self, **kwargs):
+        # return super().efficientloader_ed(**kwargs)
+
+########################################################################################################################
+# LoadImage_ED
+
+prompt_blacklist = set([
+    'filename_prefix', 'file'
+])
+
+class LoadImage_ED:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        return {
+                "required": {"image": (sorted(files), {"image_upload": True}),},
+                "hidden": {"unique_id": "UNIQUE_ID"},
+                }
+
+    CATEGORY = "Efficiency Nodes/Image"
+
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
+    RETURN_NAMES = ("IMAGE", "MASK", "PROMPT_TEXT")
+    FUNCTION = "doit"
+
+    OUTPUT_NODE = True
+
+    @classmethod
+    def IS_CHANGED(s, image):
+        image_path = folder_paths.get_annotated_filepath(image)
+        m = hashlib.sha256()
+        with open(image_path, 'rb') as f:
+            m.update(f.read())
+        return m.digest().hex()
+
+    @classmethod
+    def VALIDATE_INPUTS(s, image):
+        if not folder_paths.exists_annotated_filepath(image):
+            return "Invalid image file: {}".format(image)
+
+        return True
+
+    def doit(self, image, unique_id):
+        image_path = folder_paths.get_annotated_filepath(image)
+        if image is None or image_path is None:
+            return (None, None, None)
+        img = Image.open(image_path)
+        
+        output_images = []
+        output_masks = []
+        for i in ImageSequence.Iterator(img):
+            i = ImageOps.exif_transpose(i)
+            if i.mode == 'I':
+                i = i.point(lambda i: i * (1 / 255))
+            image = i.convert("RGB")
+            image = np.array(image).astype(np.float32) / 255.0
+            image = torch.from_numpy(image)[None,]
+            if 'A' in i.getbands():
+                mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
+                mask = 1. - torch.from_numpy(mask)
+            else:
+                mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
+            output_images.append(image)
+            output_masks.append(mask.unsqueeze(0))
+
+        if len(output_images) > 1:
+            output_image = torch.cat(output_images, dim=0)
+            output_mask = torch.cat(output_masks, dim=0)
+        else:
+            output_image = output_images[0]
+            output_mask = output_masks[0]
+        
+        #################################################        
+        info = Image.open(image_path).info
+
+        positive = ""
+        negative = ""
+        text = ""
+        prompt_dicts = {}
+        node_inputs = {}
+
+        def get_node_inputs(x):
+            if x in node_inputs:
+                return node_inputs[x]
+            else:
+                node_inputs[x] = None
+
+                obj = nodes.NODE_CLASS_MAPPINGS.get(x, None)
+                if obj is not None:
+                    input_types = obj.INPUT_TYPES()
+                    node_inputs[x] = input_types
+                    return input_types
+                else:
+                    return None
+
+        if isinstance(info, dict) and 'workflow' in info:
+            prompt = json.loads(info['prompt'])
+            for k, v in prompt.items():
+                input_types = get_node_inputs(v['class_type'])
+                if input_types is not None:
+                    inputs = input_types['required'].copy()
+                    if 'optional' in input_types:
+                        inputs.update(input_types['optional'])
+
+                    for name, value in inputs.items():
+                        if name in prompt_blacklist:
+                            continue
+                        
+                        if value[0] == 'STRING' and name in v['inputs'] and not isinstance(v['inputs'][name], list):
+                            prompt_dicts[f"{k}.{name.strip()}"] = (v['class_type'], v['inputs'][name])
+                        if value[0] == 'INT' and name in v['inputs'] and name.lower() == 'seed':
+                            prompt_dicts[f"{k}.{name.strip()}"] = (v['class_type'], v['inputs'][name])
+
+            for k, v in prompt_dicts.items():
+                text += f"{k} [{v[0]}] ==> {v[1]}\n"
+
+            #positive = prompt_dicts.get(positive_id.strip(), "")
+            #negative = prompt_dicts.get(negative_id.strip(), "")
+        else:
+            text = "There is no prompt information within the image."
+
+        _, image_height, image_width, _ = output_image.shape
+        text += "\nImage Size: " + str(image_width) + " x " + str(image_height )
+        return (output_image, output_mask, text)
+
+###===========================================================
+# Embedding_Stacker
+class Embedding_Stacker_ED:
+    MAX_EMB_COUNT = 9
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        embeddings = ["None"] + folder_paths.get_filename_list("embeddings")
+        inputs = {
+            "required": {
+                "positive_embeddings_count": ("INT", {"default": 0, "min": 0, "max": cls.MAX_EMB_COUNT, "step": 1}),
+                "negative_embeddings_count": ("INT", {"default": 3, "min": 0, "max": cls.MAX_EMB_COUNT, "step": 1}),
+            }
+        }
+        
+        inputs["required"][f"positive_embedding_{1}"] = (embeddings,)
+        populate_items(inputs["required"][f"positive_embedding_{1}"][0], "embeddings")
+        embedding_name_array = inputs["required"][f"positive_embedding_{1}"]
+        for i in range(1, cls.MAX_EMB_COUNT):
+            inputs["required"][f"positive_embedding_{i}"] = embedding_name_array
+            inputs["required"][f"positive_emphasis_{i}"] = ("FLOAT", {"default": 1.0, "min": 0.0, "max": 3.0, "step": 0.05})
+        for i in range(1, cls.MAX_EMB_COUNT):
+            inputs["required"][f"negative_embedding_{i}"] = embedding_name_array
+            inputs["required"][f"negative_emphasis_{i}"] = ("FLOAT", {"default": 1.0, "min": 0.0, "max": 3.0, "step": 0.05})
+        #print(f"\033[36mlora stacker{i}////:{names}\033[0m") 
+
+        inputs["optional"] = {
+            "lora_stack": ("LORA_STACK",)
+        }
+        return inputs
+
+    RETURN_TYPES = ("LORA_STACK",)
+    RETURN_NAMES = ("LORA_STACK",)
+    FUNCTION = "embedding_stacker"
+    CATEGORY = "Efficiency Nodes/Stackers"
+
+    def embedding_stacker(self, positive_embeddings_count, negative_embeddings_count, lora_stack=None, **kwargs):
+        for i in range(1, self.MAX_EMB_COUNT):
+            kwargs[f"positive_embedding_{i}"] = kwargs[f"positive_embedding_{i}"]["content"]
+            kwargs[f"negative_embedding_{i}"] = kwargs[f"negative_embedding_{i}"]["content"]
+        # Extract values from kwargs
+        pos_embs = [kwargs.get(f"positive_embedding_{i}") for i in range(1, positive_embeddings_count + 1)]
+        # Create a list of tuples using provided parameters, exclude tuples with lora_name as "None"
+        pos_emps = [kwargs.get(f"positive_emphasis_{i}") for i in range(1, positive_embeddings_count + 1)]
+        pos_embs = [("POS_EMBEDDING", pos_emb, round(pos_emp, 2)) for pos_emb, pos_emp in zip(pos_embs, pos_emps) if
+                     pos_emb != "None"]
+        # Extract values from kwargs
+        neg_embs = [kwargs.get(f"negative_embedding_{i}") for i in range(1, negative_embeddings_count + 1)]
+        # Create a list of tuples using provided parameters, exclude tuples with lora_name as "None"
+        neg_emps = [kwargs.get(f"negative_emphasis_{i}") for i in range(1, negative_embeddings_count + 1)]
+        neg_embs = [("NEG_EMBEDDING", neg_emb, round(neg_emp, 2)) for neg_emb, neg_emp in zip(neg_embs, neg_emps) if
+                     neg_emb != "None"]
+        loras = pos_embs + neg_embs
+        
+        # If lora_stack is not None, extend the loras list with lora_stack
+        if lora_stack is not None:
+            loras.extend([l for l in lora_stack if l[0] != "None"])
+        #print(f"\033[36mlorasEmbedding////:{(loras,)}\033[0m") 
+        return (loras,)
+
+def embedding_process(lora_stack, positive, negative, positive_refiner, negative_refiner):
+    if lora_stack is None:
+        return (lora_stack, positive, negative, positive_refiner, negative_refiner)
+    
+    new_lora_stack = []
+    pos = positive
+    neg = negative
+    pos_refiner = positive_refiner
+    neg_refiner = negative_refiner
+    
+    for entry in lora_stack:
+        if entry[0] == "POS_EMBEDDING":
+            emb = "embedding:" + Path(entry[1]).stem        
+            if entry[2] != 1:
+                emb = f"({emb}:{entry[2]})"
+            pos = f"{positive.rstrip(' ,')}, {emb},"
+            positive = pos
+            if positive_refiner is not None:
+                pos_refiner = f"{positive_refiner.rstrip(' ,')}, {emb},"
+                positive_refiner = pos_refiner
+        elif entry[0] == "NEG_EMBEDDING":
+            emb = "embedding:" + Path(entry[1]).stem        
+            if entry[2] != 1:
+                emb = f"({emb}:{entry[2]})"
+            neg = f"{negative.rstrip(' ,')}, {emb},"
+            negative = neg
+            if negative_refiner is not None:
+                neg_refiner = f"{negative_refiner.rstrip(' ,')}, {emb},"
+                negative_refiner = neg_refiner
+        else:
+            new_lora_stack.append(entry)
+                
+    if len(new_lora_stack) == 0:
+        new_lora_stack = None
+    #print(f"\033[36mnew_lora_stack:{new_lora_stack}\033[0m")
+    return (new_lora_stack, pos, neg, pos_refiner, neg_refiner)
+
+#################################
+
+MAX_CASHE_ED_CONTROLNET = 1
+
+class Control_Net_Script_ED:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": {"control_net_name": (folder_paths.get_filename_list("controlnet"), ),
+                             "image": ("IMAGE",),
+                             "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 10.0, "step": 0.01}),
+                             "start_percent": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.001}),
+                             "end_percent": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.001})},
+                "optional": {"cnet_stack": ("CONTROL_NET_STACK",),
+                                   "script": ("SCRIPT",)},
+                }
+
+    RETURN_TYPES = ("SCRIPT",)
+    RETURN_NAMES = ("SCRIPT",)
+    FUNCTION = "control_net_script_ed"
+    CATEGORY = "Efficiency Nodes/Scripts"
+
+    def control_net_script_ed(self, control_net_name, image, strength, start_percent, end_percent, cnet_stack=None, script=None):
+        script = script or {}
+        cash = cashload_ed("control_net", control_net_name)
+        if cash is not None:
+            control_net = cash
+        else:            
+            controlnet_path = folder_paths.get_full_path("controlnet", control_net_name)
+            control_net = comfy.controlnet.load_controlnet(controlnet_path)
+            cashsave_ed("control_net", control_net_name, control_net, MAX_CASHE_ED_CONTROLNET)
+        
+        # If control_net_stack is None, initialize as an empty list        
+        cnet_stack = [] if cnet_stack is None else cnet_stack
+
+        # Extend the control_net_stack with the new tuple
+        cnet_stack.extend([(control_net, image, strength, start_percent, end_percent)])
+        script["control_net"] = (cnet_stack)
+        return (script,)
+
+########################################################################################################################
+# TSC KSampler (Efficient) ED
+class TSC_KSampler_ED(TSC_KSampler):
+
+    image_source = {
+        "Latent": 1,
+        "Image": 2,
+    }
+    set_seed_cfg_from = {
+        "from node to ctx": 1,
+        "from context": 2,
+        "from node only": 3,
+    }
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required":
+                    {"context": ("RGTHREE_CONTEXT",),
+                     "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from node to ctx"}),
+                     "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                     "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+                     "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
+                     "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                     "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                     "preview_method": (["auto", "latent2rgb", "taesd", "vae_decoded_only", "none"],),
+                     "vae_decode": (["true", "true (tiled)", "false"],),
+                     "image_source_to_use": (list(TSC_KSampler_ED.image_source.keys()), {"default": "Latent"}),
+                     },
+                "optional": {
+                     "image_opt": ("IMAGE",),
+                     "script": ("SCRIPT",),},
+                "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},}
+
+    RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
+    RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE")
+    OUTPUT_NODE = True
+    FUNCTION = "sample_ed"
+    CATEGORY = "Efficiency Nodes/Sampling"
+
+    def sample_ed(self, context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, preview_method, vae_decode,
+                image_source_to_use, t_positive=None, t_negative=None, denoise=1.0, refiner_denoise=1.0, prompt=None, 
+                extra_pnginfo=None, my_unique_id=None, image_opt=None, script=None, add_noise=None, start_at_step=None, end_at_step=None,
+                return_with_leftover_noise=None, sampler_type="regular"):
+
+
+        #---------------------------------------------------------------------------------------------------------------
+        # Unpack from CONTEXT 
+        # if sampler_type == "sdxl":
+            # _, model, refiner_model, vae, positive, refiner_positive, negative, refiner_negative, latent_image, optional_image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "refiner_model", "vae", "positive", "refiner_positive", "negative", "refiner_negative", "latent", "images", "seed", "cfg", "sampler", "scheduler"])                                                                                                   
+        # else:
+        _, model, vae, positive, negative, latent_image, optional_image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "vae", "positive", "negative", "latent", "images", "seed", "cfg", "sampler", "scheduler"])
+        
+        if t_positive:
+            positive = t_positive
+        if t_negative:
+            negative = t_negative            
+        if image_opt is not None:
+            optional_image = image_opt
+            print(f"KSampler ED: Using priority image instead of context image.")
+        if model is None:
+            raise Exception("KSampler (Efficient) ED: Model is None. \n\n\n\n\n\n")
+            
+        if image_source_to_use == "Image":
+            if optional_image is not None:
+                latent_image = vae_encode_image(vae, optional_image, vae_decode)
+            else:
+                raise Exception("KSampler (Efficient) ED: image_source_to_use mode requires an image.\n\n\n\n\n\n")
+        else:
+            if latent_image is None:
+                raise Exception("KSampler (Efficient) ED: latent_source_to_use mode requires an latent image.\n\n\n\n\n\n")        
+        
+        if set_seed_cfg_sampler == "from context":
+            if c_seed is None:
+                raise Exception("KSampler (Efficient) ED: No seed, cfg, sampler name in the context.\n\n\n\n\n\n")
+            else:
+                seed = c_seed
+                if sampler_type == "sdxl":
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "noise_seed", "type": "text", "data": seed})
+                else:
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
+                cfg = c_cfg
+                PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "cfg", "type": "text", "data": cfg})
+                sampler_name = c_sampler
+                PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "sampler_name", "type": "text", "data": sampler_name})
+                scheduler = c_scheduler
+                PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "scheduler", "type": "text", "data": scheduler})
+        elif set_seed_cfg_sampler =="from node to ctx":
+            context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)
+            
+        #---------------------------------------------------------------------------------------------------------------
+        def keys_exist_in_script(*keys):
+            return any(key in script for key in keys) if script else False
+        #######################################ED Control net script
+        if keys_exist_in_script("control_net"):
+            cnet_stack = script["control_net"]
+            if cnet_stack:
+                print(f"KSampler ED: apply control net from script")
+                controlnet_conditioning = TSC_Apply_ControlNet_Stack().apply_cnet_stack(positive, negative, cnet_stack)
+                positive, negative = controlnet_conditioning[0], controlnet_conditioning[1]                
+                
+        returndict = super().sample(model, seed, steps, cfg, sampler_name, scheduler, 
+               positive, negative, latent_image, preview_method, vae_decode, denoise=denoise, prompt=prompt, 
+               extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id,
+               optional_vae=vae, script=script, add_noise=add_noise, start_at_step=start_at_step, end_at_step=end_at_step,
+               return_with_leftover_noise=return_with_leftover_noise, sampler_type=sampler_type)
+        
+        original_model, _, _, latent_list, _, output_images = returndict["result"]
+        
+        context = new_context_ed(context, model=original_model,  latent=latent_list, images=output_images,) #RE
+        result = (context, output_images, optional_image)
+        return {"ui": returndict["ui"], "result": result}
+
+#=======================================================================================================================
+# TSC KSampler SDXL ED (Efficient)
+# class TSC_KSamplerSDXL_ED(TSC_KSampler_ED):
+
+    # @classmethod
+    # def INPUT_TYPES(cls):
+        # return {"required":
+                    # {"context": ("RGTHREE_CONTEXT",),
+                     # "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from node to ctx"}),
+                     # "noise_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                     # "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+                     # "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
+                     # "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                     # "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                     # "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                     # "refiner_denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                     # "start_at_step": ("INT", {"default": 0, "min": 0, "max": 10000}),
+                     # "refine_at_step": ("INT", {"default": -1, "min": -1, "max": 10000}),
+                     # "preview_method": (["auto", "latent2rgb", "taesd", "none"],),
+                     # "vae_decode": (["true", "true (tiled)", "false", "output only", "output only (tiled)"],),
+                     # "image_source_to_use": (list(TSC_KSampler_ED.image_source.keys()), {"default": "Latent"}),
+                     # },
+                # "optional": {"image_opt": ("IMAGE",),
+                     # "model_opt": ("MODEL",),
+                     # "script": ("SCRIPT",),},
+                # "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},
+                # }
+
+    # RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
+    # RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE IMAGE")
+    # OUTPUT_NODE = True
+    # FUNCTION = "sample_sdxl_ed"
+    # CATEGORY = "Efficiency Nodes/Sampling"
+
+    # def sample_sdxl_ed(self, context, set_seed_cfg_sampler, noise_seed, steps, cfg, sampler_name, scheduler, 
+               # start_at_step, refine_at_step, preview_method, vae_decode, image_source_to_use, denoise, refiner_denoise, prompt=None, extra_pnginfo=None,
+               # my_unique_id=None, refiner_extras=None, model_opt=None, image_opt=None, script=None):
+        # # sdxl_tuple sent through the 'model' channel
+        # negative = None
+        # return super().sample_ed(context, set_seed_cfg_sampler, noise_seed, steps, cfg, sampler_name, scheduler,
+               # preview_method, vae_decode, image_source_to_use, refiner_extras, negative, denoise, refiner_denoise, prompt=prompt,
+               # extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id, image_opt=image_opt, model_opt=model_opt, script=script, add_noise=None, start_at_step=start_at_step, end_at_step=refine_at_step,
+               # return_with_leftover_noise=None,sampler_type="sdxl")
+########################################################################################################################
+
+# KSamplerTEXT ED ##for BackGround Make
+class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required":
+                    {"context": ("RGTHREE_CONTEXT",),
+                     "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from node to ctx"}),
+                     "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                     "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+                     "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
+                     "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                     "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                     "preview_method": (["auto", "latent2rgb", "taesd", "vae_decoded_only", "none"],),
+                     "positive": ("STRING", {"default": "CLIP_POSITIVE","multiline": True}),
+                     "negative": ("STRING", {"default": "CLIP_NEGATIVE", "multiline": True}),
+                     "vae_decode": (["true", "true (tiled)", "false"],),
+                     "image_source_to_use": (list(TSC_KSampler_ED.image_source.keys()), {"default": "Latent"}),
+                     },
+                "optional": {"image_opt": ("IMAGE",),
+                     "script": ("SCRIPT",),},
+                "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},
+                }
+
+    RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
+    RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE")
+    OUTPUT_NODE = True
+    FUNCTION = "backgroundmake_ed"
+    CATEGORY = "Efficiency Nodes/Sampling"
+
+    def backgroundmake_ed(self, context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, 
+               preview_method, vae_decode, image_source_to_use, positive=None, negative=None, denoise=1.0, refiner_denoise=1.0, prompt=None, extra_pnginfo=None, my_unique_id=None,
+               image_opt=None, script=None, add_noise=None, start_at_step=None, end_at_step=None,
+               return_with_leftover_noise=None, sampler_type="regular"):
+        
+        def latent_width_height(samples):
+            size_dict = {}
+            i = 0
+            for tensor in samples['samples'][0]:
+                if not isinstance(tensor, torch.Tensor):
+                    cstr(f'Input should be a torch.Tensor').error.print()
+                shape = tensor.shape
+                tensor_height = shape[-2]
+                tensor_width = shape[-1]
+                size_dict.update({i:[tensor_width, tensor_height]})
+            return ( size_dict[0][0] * 8, size_dict[0][1] * 8 )
+        
+        _, clip, optional_latent, optional_image = context_2_tuple_ed(context,["clip", "latent", "images"])
+        
+        if image_source_to_use == "Image":
+            if optional_image is not None:
+                _, image_height, image_width, _ = optional_image.shape
+                print(f"KSamplerTEXT ED: size get from image (width x height : {image_width} x {image_height})")
+            else:
+                raise Exception("KSamplerTEXT ED: Image source to use mode requires an image.\n\n\n\n\n\n")
+        elif optional_latent is not None:
+            image_width, image_height  = latent_width_height(optional_latent)
+            print(f"KSamplerTEXT ED: size get from letent (width x height : {image_width} x {image_height})")
+        else:
+            raise Exception("KSamplerTEXT ED: Latent source to use mode requires a latent.\n\n\n\n\n\n")
+        
+        batch_size = 1
+        latent_t = torch.zeros([batch_size, 4, image_height // 8, image_width // 8]).cpu()
+        latent_image = {"samples":latent_t}
+        
+        tokens = clip.tokenize(positive)
+        cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+        positive = [[cond, {"pooled_output": pooled}]]
+
+        tokens = clip.tokenize(negative)
+        cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+        negative = [[cond, {"pooled_output": pooled}]]
+        
+        return super().sample_ed(context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, 
+               preview_method, vae_decode, image_source_to_use, positive, negative, denoise, refiner_denoise, prompt=prompt,
+               extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id, image_opt=image_opt, script=script,
+               add_noise=None, start_at_step=start_at_step, end_at_step=None,
+               return_with_leftover_noise=None, sampler_type="regular")
+
+
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
+    #ED
+    "Efficient Loader 💬ED": TSC_EfficientLoader_ED,
+#    "Eff. Loader SDXL 💬ED": TSC_EfficientLoaderSDXL_ED,
+    "KSampler (Efficient) 💬ED": TSC_KSampler_ED,
+#    "KSampler SDXL (Eff.) 💬ED": TSC_KSamplerSDXL_ED,
+    "KSampler TEXT (Eff.) 💬ED": TSC_KSamplerTEXT_ED,    
+    "Load Image 💬ED": LoadImage_ED,
+    "Control Net Script 💬ED": Control_Net_Script_ED,
+    "Embedding Stacker 💬ED": Embedding_Stacker_ED,    
+    
     "KSampler (Efficient)": TSC_KSampler,
     "KSampler Adv. (Efficient)":TSC_KSamplerAdvanced,
     "KSampler SDXL (Eff.)": TSC_KSamplerSDXL,
@@ -4244,6 +5165,290 @@ NODE_CLASS_MAPPINGS = {
     "Tiled Upscaler Script": TSC_Tiled_Upscaler,
     "LoRA Stack to String converter": TSC_LoRA_Stack2String
 }
+
+
+#==========================================================================================#
+##################################                FaceDetailer_ED       ##################################
+
+MAX_CASHE_ED_FACE = 2
+
+if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
+    printout = "Attempting to add 'FaceDetailer ED' Node (ComfyUI Impact Pack add-on)..."
+    print(f"{message('Efficiency Nodes ED:')} {printout}", end="")
+    try:
+        sys_modules_backup = sys.modules
+        impact_path = os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")
+        subpack_path = os.path.join(impact_path, "impact_subpack")
+        modules_path = os.path.join(impact_path, "modules")
+        sys.path.append(impact_path)
+        sys.path.append(subpack_path)
+        sys.path.append(modules_path)
+        import impact.impact_pack as impact_pack
+        import impact.subcore as subcore
+        
+        def detector_model(model_name):    
+            if model_name is None or model_name == "None":
+                return None                
+            cash = cashload_ed("ultra_bbox_segm_detector", model_name)
+            if cash is not None:
+                return (cash)
+            model_path = folder_paths.get_full_path("ultralytics", model_name)
+            m = subcore.load_yolo(model_path)
+            if model_name.startswith("bbox"):
+                model = subcore.UltraBBoxDetector(m)
+            else:
+                model = subcore.UltraSegmDetector(m)                
+            cashsave_ed("ultra_bbox_segm_detector", model_name, model, MAX_CASHE_ED_FACE)
+            return (model)
+                
+        def load_sam_model(model_name, device_mode="auto"):
+            if model_name == "None" or model_name is None:                
+                return None
+            cash = cashload_ed("sam_model", model_name)
+            if cash is not None:
+                return (cash)
+            (sam, ) = impact_pack.SAMLoader.load_model(None, model_name, device_mode=device_mode)
+            cashsave_ed("sam_model", model_name, sam, MAX_CASHE_ED_FACE)
+            return (sam)
+
+        class FaceDetailer_ED(impact_pack.FaceDetailer):
+            @classmethod
+            def INPUT_TYPES(s):
+                bboxs = ["bbox/"+x for x in folder_paths.get_filename_list("ultralytics_bbox")]
+                segms = ["None"] + ["segm/"+x for x in folder_paths.get_filename_list("ultralytics_segm")]
+                sams = ["None"] + [x for x in folder_paths.get_filename_list("sams") if 'hq' not in x]
+                return {"required": {
+                            "context": ("RGTHREE_CONTEXT",),
+                            "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from context"}),
+                            "bbox_detector": (bboxs, ),
+                            "segm_detector_opt": (segms, ),
+                            "sam_model_opt": (sams, ), 
+                            "sam_mode": (["AUTO", "Prefer GPU", "CPU"],),
+                     
+                            "guide_size": ("FLOAT", {"default": 384, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                            "guide_size_for": ("BOOLEAN", {"default": True, "label_on": "bbox", "label_off": "crop_region"}),
+                            "max_size": ("FLOAT", {"default": 1024, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                            "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                            "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+                            "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                            "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                            "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                            "denoise": ("FLOAT", {"default": 0.5, "min": 0.0001, "max": 1.0, "step": 0.01}),
+                            "feather": ("INT", {"default": 5, "min": 0, "max": 100, "step": 1}),
+                            "noise_mask": ("BOOLEAN", {"default": True, "label_on": "enabled", "label_off": "disabled"}),
+                            "force_inpaint": ("BOOLEAN", {"default": True, "label_on": "enabled", "label_off": "disabled"}),
+
+                            "bbox_threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                            "bbox_dilation": ("INT", {"default": 10, "min": -512, "max": 512, "step": 1}),
+                            "bbox_crop_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10, "step": 0.1}),
+
+                            "sam_detection_hint": (["center-1", "horizontal-2", "vertical-2", "rect-4", "diamond-4", "mask-area", "mask-points", "mask-point-bbox", "none"],),
+                            "sam_dilation": ("INT", {"default": 0, "min": -512, "max": 512, "step": 1}),
+                            "sam_threshold": ("FLOAT", {"default": 0.93, "min": 0.0, "max": 1.0, "step": 0.01}),
+                            "sam_bbox_expansion": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),
+                            "sam_mask_hint_threshold": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01}),
+                            "sam_mask_hint_use_negative": (["False", "Small", "Outter"],),
+                            "drop_size": ("INT", {"min": 1, "max": MAX_RESOLUTION, "step": 1, "default": 10}),                     
+                            "wildcard": ("STRING", {"multiline": True, "dynamicPrompts": False}),
+                            "cycle": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+                            },
+                        "optional": {
+                            "image_opt": ("IMAGE",),
+                            "detailer_hook": ("DETAILER_HOOK",),
+                            "positive_text_opt": ("STRING", {"forceInput": True}),
+                            "negative_text_opt": ("STRING", {"forceInput": True}),
+                            "inpaint_model": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
+                            "noise_mask_feather": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1}),
+                        },
+                        "hidden": {"my_unique_id": "UNIQUE_ID",},}
+
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "MASK", "IMAGE")
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE", "CROPPED_REFINED", "CROPPED_ENHANCED_ALPHA", "MASK", "CNET_IMAGES")
+            OUTPUT_IS_LIST = (False, False, False, True, True, False, True)    
+            FUNCTION = "doit_ed"
+            CATEGORY = "ImpactPack/Simple"  
+
+            def doit_ed(self, context, set_seed_cfg_sampler, bbox_detector, segm_detector_opt, sam_model_opt, sam_mode, 
+                    guide_size, guide_size_for, 
+                    max_size, seed, steps, cfg, sampler_name, scheduler, denoise, feather, noise_mask, force_inpaint,
+                    bbox_threshold, bbox_dilation, bbox_crop_factor,
+                    sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
+                    sam_mask_hint_use_negative, drop_size, wildcard, image_opt=None, cycle=1,
+                    detailer_hook=None, positive_text_opt=None, negative_text_opt=None, inpaint_model=False, noise_mask_feather=0, my_unique_id=None):
+        
+                _, model, clip, vae, positive, negative, image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative",  "images", "seed", "cfg", "sampler", "scheduler"])
+        
+                if image_opt is not None:       
+                    image = image_opt
+                if positive_text_opt and positive_text_opt != "":
+                    positive = None
+                    tokens = clip.tokenize(positive_text_opt)
+                    cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+                    positive = [[cond, {"pooled_output": pooled}]]
+                    print(f"\033[32mFaceDetailer ED: use positive text to positive conditioning\033[0m")
+
+                if negative_text_opt and negative_text_opt != "":
+                    negative = None
+                    tokens = clip.tokenize(negative_text_opt)
+                    cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+                    negative = [[cond, {"pooled_output": pooled}]]
+                    print(f"\033[32mFaceDetailer ED: use negative text to negative conditioning\033[0m")
+        
+                if set_seed_cfg_sampler == "from context":
+                    if c_seed is None:
+                        raise Exception("FaceDetailer ED: No seed, cfg, sampler name in the context.\n\n\n\n\n\n")
+                    else:
+                        seed = c_seed
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
+                        cfg = c_cfg
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "cfg", "type": "text", "data": cfg})
+                        sampler_name = c_sampler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "sampler_name", "type": "text", "data": sampler_name})
+                        scheduler = c_scheduler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "scheduler", "type": "text", "data": scheduler})
+                elif set_seed_cfg_sampler =="from node to ctx":
+                    context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)      
+        
+                bbox_detector = detector_model(bbox_detector)
+                segm_detector_opt = detector_model(segm_detector_opt)
+                sam_model_opt = load_sam_model(sam_model_opt, sam_mode)
+
+                result_img, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, _, result_cnet_images = super().doit(image, model, clip, vae, guide_size, guide_size_for, max_size, seed, steps, cfg, sampler_name, scheduler,
+                    positive, negative, denoise, feather, noise_mask, force_inpaint,
+                    bbox_threshold, bbox_dilation, bbox_crop_factor,
+                    sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
+                    sam_mask_hint_use_negative, drop_size, bbox_detector, wildcard, cycle=cycle,
+                    sam_model_opt=sam_model_opt, segm_detector_opt=segm_detector_opt, detailer_hook=detailer_hook, 
+                    inpaint_model=inpaint_model, noise_mask_feather=noise_mask_feather)
+
+                context = new_context_ed(context, images=result_img) #RE 
+                return (context, result_img, image, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, result_cnet_images)
+            
+        NODE_CLASS_MAPPINGS.update({"FaceDetailer 💬ED": FaceDetailer_ED})
+        sys.path.remove(impact_path)
+        sys.path.remove(subpack_path)
+        sys.path.remove(modules_path)
+        sys.modules = sys_modules_backup
+        print(f"\r{message('Efficiency Nodes ED:')} {printout}{success('Success!')}")
+
+    except Exception:
+        print(f"\r{message('Efficiency Nodes ED:')} {printout}{error('Failed!')}")
+
+
+
+#=================================================================================#
+##################################       UltimateSDUpscale ED       ##################################
+MAX_CASHE_ED_ULTIMATE_UPSCALE = 1
+
+if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
+    printout = "Attempting to add 'UltimateSDUpscale ED' Node (UltimateSDUpscale add-on)..."
+    print(f"{message('Efficiency Nodes ED:')} {printout}", end="")
+    try:
+        ultimate_sd_path = os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")
+        sys_modules_backup = sys.modules
+        sys.path.insert(0, ultimate_sd_path)
+        if sys.modules['utils']:
+            sys.modules.pop('utils', None)
+
+        import ComfyUI_UltimateSDUpscale.nodes as ultimate_sd
+        import comfy_extras.nodes_upscale_model as nodes_upscale_model        
+
+        def load_upscale_model(model_name):
+            cash = cashload_ed("ultimate_sd_upscaler", model_name)
+            if cash is not None:
+                return (cash)
+            (model, ) = nodes_upscale_model.UpscaleModelLoader.load_model(None, model_name)
+            cashsave_ed("ultimate_sd_upscaler", model_name, model, MAX_CASHE_ED_ULTIMATE_UPSCALE)
+            return (model)
+
+        class UltimateSDUpscaleED(ultimate_sd.UltimateSDUpscale):
+            @classmethod
+            def INPUT_TYPES(s):
+                return {"required": 
+                        {
+                        "context": ("RGTHREE_CONTEXT",),
+                        "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from context"}),
+                        "upscale_model": (folder_paths.get_filename_list("upscale_models"), ),
+                        "upscale_by": ("FLOAT", {"default": 2, "min": 0.05, "max": 4, "step": 0.05}),
+                        "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                        "steps": ("INT", {"default": 20, "min": 1, "max": 10000, "step": 1}),
+                        "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                        "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                        "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),                        
+                        "denoise": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01}),
+                        # Upscale Params
+                        "mode_type": (list(ultimate_sd.MODES.keys()),),
+                        "set_tile_size_from_image_size": ("BOOLEAN", {"default": True}),
+                        "tile_width": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
+                        "tile_height": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
+                        "mask_blur": ("INT", {"default": 8, "min": 0, "max": 64, "step": 1}),
+                        "tile_padding": ("INT", {"default": 32, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
+                        # Seam fix params
+                        "seam_fix_mode": (list(ultimate_sd.SEAM_FIX_MODES.keys()),),
+                        "seam_fix_denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+                        "seam_fix_width": ("INT", {"default": 64, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
+                        "seam_fix_mask_blur": ("INT", {"default": 8, "min": 0, "max": 64, "step": 1}),
+                        "seam_fix_padding": ("INT", {"default": 16, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
+                        # Misc
+                        "force_uniform_tiles": ("BOOLEAN", {"default": True}),
+                        "tiled_decode": ("BOOLEAN", {"default": False}),
+                    },
+                    "optional": {"image_opt": ("IMAGE",),},
+                    "hidden": {"my_unique_id": "UNIQUE_ID",},}
+
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE")
+            FUNCTION = "upscale_ed"
+            CATEGORY = "image/upscaling"
+
+            def upscale_ed(self, context, set_seed_cfg_sampler, upscale_model, upscale_by, 
+                        seed, steps, cfg, sampler_name, scheduler, denoise, 
+                        mode_type, set_tile_size_from_image_size, tile_width, tile_height, mask_blur, tile_padding,
+                        seam_fix_mode, seam_fix_denoise, seam_fix_mask_blur,
+                        seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode, image_opt=None, my_unique_id=None):
+        
+                _, model, clip, vae, positive, negative, image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative",  "images", "seed", "cfg", "sampler", "scheduler"])
+                
+                if image_opt != None:
+                    image = image_opt
+                if set_seed_cfg_sampler == "from context":
+                    if c_seed == None:
+                        raise Exception("KSampler (Efficient) ED: No seed, cfg, sampler name in the context.\n\n\n\n\n\n")
+                    else:
+                        seed = c_seed
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
+                        cfg = c_cfg
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "cfg", "type": "text", "data": cfg})
+                        sampler_name = c_sampler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "sampler_name", "type": "text", "data": sampler_name})
+                        scheduler = c_scheduler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "scheduler", "type": "text", "data": scheduler})
+                elif set_seed_cfg_sampler =="from node to ctx":
+                    context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)
+            
+                if set_tile_size_from_image_size == True:
+                    _, tile_height, tile_width, _ = image.shape
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_width", "type": "text", "data": tile_width})
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_height", "type": "text", "data": tile_height})
+
+                upscaler = load_upscale_model(upscale_model)        
+                        
+                (tensor,) = super().upscale(image, model, positive, negative, vae, upscale_by, seed,
+                        steps, cfg, sampler_name, scheduler, denoise, upscaler,
+                        mode_type, tile_width, tile_height, mask_blur, tile_padding,
+                        seam_fix_mode, seam_fix_denoise, seam_fix_mask_blur,
+                        seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode)
+                
+                context = new_context_ed(context, images=tensor) #RE        
+                return (context, tensor, image)
+
+        NODE_CLASS_MAPPINGS.update({"Ultimate SD Upscale 💬ED": UltimateSDUpscaleED})
+        sys.path.remove(ultimate_sd_path)
+        sys.modules = sys_modules_backup
+        print(f"\r{message('Efficiency Nodes ED:')} {printout}{success('Success!')}")
+
+    except Exception:
+        print(f"\r{message('Efficiency Nodes ED:')} {printout}{error('Failed!')}")
 
 ########################################################################################################################
 # Add AnimateDiff Script based off Kosinkadink's Nodes (https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved) deprecated
@@ -4413,3 +5618,7 @@ try:
 
 except ImportError:
     print(f"{warning('Efficiency Nodes Warning:')} Failed to import python package 'simpleeval'; related nodes disabled.\n")
+    
+    
+    
+  

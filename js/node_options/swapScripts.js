@@ -65,7 +65,7 @@ function showSwapMenu(value, options, e, menu, node) {
         "Noise Control Script",
         "HighRes-Fix Script",
         "Tiled Upscaler Script",
-        "AnimateDiff Script"
+        "Control Net Script 💬ED"
     ];
 
     const swapOptions = scriptNodes.filter(n => n !== node.type).map(n => ({
@@ -87,9 +87,9 @@ function showSwapMenu(value, options, e, menu, node) {
 app.registerExtension({
     name: "efficiency.SwapScripts",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (["XY Plot", "Noise Control Script", "HighRes-Fix Script", "Tiled Upscaler Script", "AnimateDiff Script"].includes(nodeData.name)) {
-            addMenuHandler(nodeType, function (insertOption) {
-                insertOption({
+        if (["XY Plot", "Noise Control Script", "HighRes-Fix Script", "Tiled Upscaler Script", "Control Net Script 💬ED"].includes(nodeData.name)) {
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
+                options.unshift({
                     content: "🔄 Swap with...",
                     has_submenu: true,
                     callback: showSwapMenu

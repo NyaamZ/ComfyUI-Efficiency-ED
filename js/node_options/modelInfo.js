@@ -245,6 +245,15 @@ const generateNames = (prefix, start, end) => {
 
 // NOTE: Orders reversed so they appear in ascending order
 const infoHandler = {
+	"Efficient Loader 💬ED": {
+        "checkpoints": ["ckpt_name"]
+    },
+	// "Eff. Loader SDXL 💬ED": {
+        // "checkpoints": ["ckpt_name"]
+    // },
+    "Embedding Stacker 💬ED": {
+        "embeddings": generateNames("negative_embedding_", 50, 1)
+    },
     "Efficient Loader": {
         "loras": ["lora_name"],
         "checkpoints": ["ckpt_name"]
@@ -271,15 +280,22 @@ app.registerExtension({
         const types = infoHandler[nodeType.comfyClass];
 
         if (types) {
-            addMenuHandler(nodeType, function (insertOption) { // Here, we are calling addMenuHandler
+            addMenuHandler(nodeType, function (_, options) {// Here, we are calling addMenuHandler
                 let submenuItems = [];  // to store submenu items
 
                 const addSubMenuOption = (type, widgetNames) => {
-                    widgetNames.forEach(widgetName => {
+					const widgetreverse = [...widgetNames].reverse();
+                    widgetreverse.forEach(widgetName => {
                         const widgetValue = this.widgets.find(w => w.name === widgetName)?.value;
                         
                         // Check if widgetValue is "None"
-                        if (!widgetValue || widgetValue === "None") {
+						if (widgetValue != null){
+							if (widgetValue['content'] == "None") {
+                            return;
+							}
+						}
+						
+                        if (!widgetValue || widgetValue === "None" || widgetValue === "(use same)") {
                             return;
                         }
                         
@@ -309,7 +325,7 @@ app.registerExtension({
 
                 // If we have submenu items, use insertOption
                 if (submenuItems.length) {
-                    insertOption({ // Using insertOption here
+                    options.unshift({ // Using insertOption here
                         content: "🔍 View model info...",
                         has_submenu: true,
                         callback: (value, options, e, menu, node) => {
