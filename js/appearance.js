@@ -20,6 +20,7 @@ const NODE_COLORS = {
 	"Load Image 💬ED": "blue",
 	"Control Net Script 💬ED": "green",
 	"Embedding Stacker 💬ED": "blue",
+
     "KSampler (Efficient)": "random",
     "KSampler Adv. (Efficient)": "random",
     "KSampler SDXL (Eff.)": "random",
