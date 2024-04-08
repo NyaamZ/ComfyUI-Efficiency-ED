@@ -5158,8 +5158,6 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
                add_noise=None, start_at_step=start_at_step, end_at_step=None,
                return_with_leftover_noise=None, sampler_type="regular")
 
-
-
 ########################################################################################################################
 # NODE MAPPING
 NODE_CLASS_MAPPINGS = {
