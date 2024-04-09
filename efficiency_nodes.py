@@ -5388,7 +5388,7 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
         ultimate_sd_path = os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")
         sys_modules_backup = sys.modules
         sys.path.insert(0, ultimate_sd_path)
-        if sys.modules['utils']:
+        if 'utils' in sys.modules:
             sys.modules.pop('utils', None)
 
         import ComfyUI_UltimateSDUpscale.nodes as ultimate_sd
