@@ -1,13 +1,31 @@
-✨🍬Planning to help this branch stay alive and any issues will try to solve or fix .. But will be slow as I run many github repos . before raising any issues, please update comfyUI to the latest and esnure all the required packages are updated ass well. Share your workflow in issues to retest same at our end and update the patch.🍬
+✨🍬Efficiency Nodes for ComfyUI Version 2.0+ 에서 다양한 기능을 추가한 포크 버전. 원본의 설명은 https://github.com/jags111/efficiency-nodes-comfyui 를 참조하자.🍬
 
 
-<b> Efficiency Nodes for ComfyUI Version 2.0+
+<b> Efficiency Nodes ED 
 =======
-### A collection of <a href="https://github.com/comfyanonymous/ComfyUI" >ComfyUI</a> custom nodes to help streamline workflows and reduce total node count.
-## Releases
+### 워크플로 (EXIF 있음)
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/a2cb4278-4294-4a16-9c07-14ae9081f1f0" width="800" style="display: inline-block;">
+</p>
 
-Please check out our WIKI for any use cases and new developments including workflow and settings.<br>
-[Efficiency Nodes Wiki](https://github.com/jags111/efficiency-nodes-comfyui/wiki)<br>
+### 원본과 다르게 ED노드는 Context 링크를 주고 받는다. 
+### Context:
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/1c55eecb-7c9d-402d-bf3d-9ecb4c109d3d" width="600" style="display: inline-block;">
+</p>
+어지럽게 널린 링크들을 context 위의 그림 처럼 단 한줄로 정리!<br><br>
+Context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다. rgthree의 커스텀 노드에서 차용했다.<br>
+
+Efficiency Nodes ED의 Context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 Context와 호환.
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/cf795977-8ab6-4646-9d28-02737122cd88" width="300" style="display: inline-block;">
+</p>
+Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드가 필요하다.<br><br>
+
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d82d0bd1-45fc-4f72-8cd8-15b61693db8c" width="300" style="display: inline-block;">
+</p>
+Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.<br>
 
 ### Nodes:
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
