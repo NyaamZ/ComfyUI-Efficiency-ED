@@ -51,7 +51,7 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
         <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/9ff41533-ba10-4707-a61b-61167aea23a9" width="250" style="display: inline-block;"><br>
           <i>(하위 폴더별로 서브메뉴에 표시하며 "🔍 View model info..."에서 "save as preview"했던 이미지를 모델 선택시 보여준다.</i><br>
           <i>모델의 프리뷰 이미지가 있다면 이름 옆에 '*'로 표시된다.</i><br>
-          <i>폴더와 모델이 함께 있을땐 순서 대로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
+          <i>폴더와 모델이 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
     </li>
     <p></p>
     <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
