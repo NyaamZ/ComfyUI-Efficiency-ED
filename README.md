@@ -30,14 +30,20 @@ Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.
 ### 추가한 💬ED 노드:
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
-    <summary><b>Efficient Loader</b> & <b>Eff. Loader SDXL</b></summary>
+    <summary><b>Efficient Loader 💬ED</b></summary>
 <ul>
-    <li>Nodes that can load & cache Checkpoint, VAE, & LoRA type models. <i>(cache settings found in config file 'node_settings.json')</i></li>
-    <li>Able to apply LoRA & Control Net stacks via their <code>lora_stack</code> and <code>cnet_stack</code> inputs.</li>
-    <li>Come with positive and negative prompt text boxes. You can also set the way you want the prompt to be <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">encoded</a> via the <code>token_normalization</code> and <code>weight_interpretation</code> widgets.</li>
-    <li>These node's also feature a variety of custom menu options as shown below.
-        <p></p><img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes//NodeMenu%20-%20Efficient%20Loaders.png" width="240" style="display: inline-block;"></p>
-         <p><i>note: "🔍 View model info..." requires <a href="https://github.com/pythongosssss/ComfyUI-Custom-Scripts">ComfyUI-Custom-Scripts</a> to be installed to function.</i></p></li>
+    <li><i>(클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능)</i><br>
+      <p align="left">
+      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
+      </p>
+      </li>
+    <li>seed, cfg, sampler, scheduler를 셋팅하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 셋팅을 이용할 수 있음.</li>
+    <li>오른 클릭에 드롭다운 메뉴 추가.
+        <p></p><img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/47995eca-94fb-4e52-b77b-2a53e9f292d0" width="240" style="display: inline-block;"></p>
+         <p><img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">"🔍 View model info..."는 모델의 정보를 표시함.</p></li>
+    <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
+    <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
+    
     <li>These loaders are used by the <b>XY Plot</b> node for many of its plot type dependencies.</li>
 </ul>
 
