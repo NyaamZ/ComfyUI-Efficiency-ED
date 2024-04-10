@@ -21,16 +21,12 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
   <summary><b>Context 간단 사용법</b></summary>
 <ul>
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/cf795977-8ab6-4646-9d28-02737122cd88" width="300" style="display: inline-block;">
-</p>
-Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드로 추출할 수 있다.<br><br>
-
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/cf795977-8ab6-4646-9d28-02737122cd88" width="300" style="display: inline-block;"><br>
+  Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드로 추출할 수 있다.</p>
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d82d0bd1-45fc-4f72-8cd8-15b61693db8c" width="300" style="display: inline-block;">
-</p>
-Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.<br>
-</ul>
-</details>
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d82d0bd1-45fc-4f72-8cd8-15b61693db8c" width="300" style="display: inline-block;"><br>
+  Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.</p>
+</ul></details>
 
 ### 추가한 💬ED 노드:
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
