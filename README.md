@@ -34,7 +34,7 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
     <summary><b>Efficient Loader 💬ED</b></summary>
 <ul>
     <p></p>
-    <li>클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능<br><i>(Txt2Img로 설정시 Ksampler (Efficient) 💬ED의 denoise 값이 자동으로 1로 설정.)</i><br>
+    <li>클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능하다.<br><i>(Txt2Img로 설정시 Ksampler (Efficient) 💬ED의 denoise 값이 자동으로 1로 설정됨.)</i><br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
       </li>
     <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. 후에 Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있다.</li>
