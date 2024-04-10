@@ -54,6 +54,12 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
           <i>폴더와 모델이 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
     </li>
     <p></p>
+    <li>Tiled VAE 인코딩<br>
+        <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/b160f24f-09f6-460f-a1a4-e906077ff61b" width="300" style="display: inline-block;"><br>
+          - 오른 클릭 > Property Panel에서 Use tiled VAE encode를 true로 하면 VAE 인코딩시에 Tiled VAE 인코딩을 사용할 수 있다.<br>
+          - Tiled VAE 인코딩은 큰 이미지를 VRAM이 부족해도 인코딩할 수 있다. 대신 기본보다 느리다.<br>
+    </li>
+    <p></p>
     <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
     <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
 </ul>
@@ -63,19 +69,30 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
     <summary><b>KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED</b></summary>
 <p></p>
 - 원래 에피션트 노드에서 Context를 입력 받을 수 있게 수정.<br>
-- KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 만든 것이다. 텍스트 입력창이 추가 되어 거기에서 포지티브와 네거티브 프롬프트를 따로 입력받는다.
-  (이미지 사이즈는 입력받은 이미지나 latent를 참조하고 Context에 프롬프트 저장은 하지 않음.)
+- KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 프롬프트 텍스트 입력창을 추가한 것이다.<br>
+  (생성할 이미지 사이즈는 image_source_to_use로 선택에 따라 context의 이미지 또는 latent를 참조하고 입력받은 프롬프트 텍스트는 context에 저장하지 않는다.)
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/37ca01cb-0b8e-4e14-9d86-7dcf09c3a481" width="500">
 </p>
     <p></p>
-    <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler를 가져오기가 가능<br>
+    <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler를 가져오기 또는 내보내기가 가능함<br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/57694db3-b520-47ef-b401-8fcbfd1eb63b" width="250" style="display: inline-block;"><br>
-      - from node to ctx는 현재 노드의 seed, cfg, sampler, scheduler 설정을 context에 입력<br>
+      - from node to ctx는 현재 노드의 seed, cfg, sampler, scheduler 설정을 context에 내보내기<br>
       - from context는 Context에서 seed, cfg, sampler, scheduler를 가져오기<br>
-      - from node only는 현재 노드의 seed, cfg, sampler, scheduler 설정을 이용하고 저장하지는 않는다.<br>
-      </li>
-    <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있음.</li>
+      - from node only는 현재 노드의 seed, cfg, sampler, scheduler 설정을 이용하고 context에 저장하지는 않는다.<br>
+    </li>
+    <p></p>
+    <li>image_source_to_use 설정<br>
+      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/65cb4134-d784-4810-a56c-49b09f8bf8ef" width="250" style="display: inline-block;"><br>
+      - context의 Image나 latent 중 무엇을 이미지 소스로 샘플링할까 선택하는 창이다.<br>
+      - Image가 선택되면 내부에서 vae decode 설정에 따라 vae encode를 해서 사용하며 image_opt가 입력되면 그 이미지를 우선 사용한다.
+    </li>
+    <p></p>
+    <li>vae decode 설정<br>
+      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/592edea3-2e16-4c29-90a3-3dd5ddd0eb63" width="250" style="display: inline-block;"><br>
+      - 샘플링 후 이미지 생성을 위한 vae 디코딩시에 무엇을 사용할지 선택하는 창이다.<br>
+      - True, True(tiled), false가 있으며 기본은 True, True(tiled)는 Tiled VAE decode 사용(느리다. 대신 VRAM이 부족해도 큰 이미지 처리 가능), false는 이미지를 내보내지 않고 context에 latent만 내보낸다.
+    </li>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
