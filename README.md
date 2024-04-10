@@ -33,6 +33,7 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
 <details>
     <summary><b>Efficient Loader 💬ED</b></summary>
 <ul>
+    <p></p>
     <li>클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능<br><i>(Txt2Img로 설정시 Ksampler (Efficient) 💬ED의 denoise 값이 자동으로 1로 설정.)</i><br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
       </li>
@@ -58,20 +59,19 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
-    <summary><b>KSampler (Efficient)</b>, <b>KSampler Adv. (Efficient)</b>, <b>KSampler SDXL (Eff.)</b></summary>
-
-- Modded KSamplers with the ability to live preview generations and/or vae decode images.
-- Feature a special seed box that allows for a clearer management of seeds. <i>(-1 seed to apply the selected seed behavior)</i>
-- Can execute a variety of scripts, such as the <b>XY Plot</b> script. To activate the <code>script</code>, simply connect the input connection.
-
+    <summary><b>KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED</b></summary>
+<p></p>
+- 원래 에피션트 노드에서 Context를 입력 받을 수 있게 모딩.<br>
+- KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 만든 것이다. 텍스트 입력창이 추가 되어 거기에서 포지티브와 네거티브 프롬프트를 따로 입력받는다.
+  (이미지 사이즈는 입력받은 이미지나 latent를 참조하고 Context에 프롬프트 저장은 하지 않음.)
 <p align="center">
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20KSampler%20(Efficient).png" width="240">
-  &nbsp; &nbsp; &nbsp;
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20KSampler%20Adv.%20(Efficient).png" width="240">
-  &nbsp; &nbsp; &nbsp;
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20KSampler%20SDXL%20(Eff.).png" width="240">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/37ca01cb-0b8e-4e14-9d86-7dcf09c3a481" width="500">
 </p>
-
+    <p></p>
+    <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler를 가져오기가 가능<br>
+      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/57694db3-b520-47ef-b401-8fcbfd1eb63b" width="250" style="display: inline-block;">
+      </li>
+    <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있음.</li>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
