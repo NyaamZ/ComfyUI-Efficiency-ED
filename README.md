@@ -38,16 +38,24 @@ Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.
     <summary><b>Efficient Loader 💬ED</b></summary>
 <ul>
     <li>클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능<br><i>(Txt2Img로 설정시 Ksampler (Efficient) 💬ED의 denoise 값이 자동으로 1로 설정.)</i><br>
-      <p align="left">
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
-      </p>
       </li>
     <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있음.</li>
-    <li>오른 클릭에 드롭다운 메뉴 추가.
-        <p></p><img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/47995eca-94fb-4e52-b77b-2a53e9f292d0" width="150" style="display: inline-block;"></p>
-         <p>"🔍 View model info..."는 모델의 정보를 표시한다.<br>
-          <i>("🔍 View model info..."는 크기가 큰 모델은 해쉬값을 찾느라 '첫' 로딩이 느리다. 처음 한번은 save as preview를 눌러 주는걸 권장.)</i><br>
-          <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f7cf378c-cd8a-49cb-9389-5681caacf130" width="250" style="display: inline-block;"></p></li>
+    <li>오른 클릭에 드롭다운 메뉴 추가.<br>
+        <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/47995eca-94fb-4e52-b77b-2a53e9f292d0" width="150" style="display: inline-block;">
+        <p>"🔍 View model info..."는 모델의 정보를 표시한다.<br>          
+          <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f7cf378c-cd8a-49cb-9389-5681caacf130" width="250" style="display: inline-block;"><br>
+          <i>("🔍 View model info..."는 크기가 큰 모델은 해쉬값을 찾느라 '첫' 로딩이 느리다. 처음 한번은 "save as preview"를 눌러 주는걸 권장.)</i><br></p>
+        <p>"📐 Aspect Ratio..."는 image_width와 image_height에 선택한 값을 입력한다.<br>
+          <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f92fdd33-ddcb-4b42-904c-4c67a52e4aa0" width="250" style="display: inline-block;"><br>
+          <i>(Txt2Img 모드로 이미지를 만들 때 편리하다.)</i><br></p>
+    </li>
+    <li>모델 선택시 프리뷰 이미지 표시<br>
+        <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/9ff41533-ba10-4707-a61b-61167aea23a9" width="250" style="display: inline-block;"><br>
+          <i>(하위 폴더별로 서브메뉴에 표시하며 "🔍 View model info..."에서 "save as preview"했던 이미지를 모델 선택시 보여준다.</i><br>
+          <i>폴더와 모델이 함께 있을땐 순서 대로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
+    </li>
+    <p></p>
     <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
     <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
     
