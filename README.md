@@ -7,16 +7,16 @@
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/a2cb4278-4294-4a16-9c07-14ae9081f1f0" width="800" style="display: inline-block;">
 </p>
+원본과 다르게 ED노드는 Context 링크를 주고 받는다.<br>
 
-### 원본과 다르게 ED노드는 Context 링크를 주고 받는다. 
 ### Context:
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/1c55eecb-7c9d-402d-bf3d-9ecb4c109d3d" width="600" style="display: inline-block;">
 </p>
-어지럽게 널린 링크들을 context 위의 그림 처럼 단 한줄로 정리!<br><br>
+어지럽게 널린 링크들을 context 위의 그림 처럼 단 한줄로 정리했다!<br><br>
 Context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다. rgthree의 커스텀 노드에서 차용했다.<br>
 
-Efficiency Nodes ED의 Context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 Context와 호환.
+Efficiency Nodes ED의 Context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 Context와 호환된다.
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/cf795977-8ab6-4646-9d28-02737122cd88" width="300" style="display: inline-block;">
 </p>
