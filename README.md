@@ -13,19 +13,19 @@
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/1c55eecb-7c9d-402d-bf3d-9ecb4c109d3d" width="600" style="display: inline-block;">
 </p>
-Context 사용해 어지럽게 널린 링크들을 위의 그림 처럼 단 한개로 정리했다!<br><br>
-Context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다.<br>
+context를 사용해 어지럽게 널린 링크들을 위의 그림 처럼 단 한개로 정리했다!<br><br>
+context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다.<br>
 (rgthree의 커스텀 노드에서 차용)<br>
-Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 Context와 호환된다.<br><br>
+Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 context와 호환된다.<br><br>
 <details>
-  <summary><b>Context 간단 사용법</b></summary>
+  <summary><b>context 간단 사용법</b></summary>
 <ul>
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/cf795977-8ab6-4646-9d28-02737122cd88" width="300" style="display: inline-block;"><br>
-  Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드로 추출할 수 있다.</p>
+  context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드로 추출할 수 있다.</p>
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d82d0bd1-45fc-4f72-8cd8-15b61693db8c" width="300" style="display: inline-block;"><br>
-  Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.</p>
+  context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.</p>
 </ul></details>
 
 ### 추가한 💬ED 노드:
@@ -64,13 +64,15 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
     <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
     <p></p>
     <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
+    <p></p>
+    <li>Efficient Loader 💬ED에서 context로 출력하는 값은, model, clip, vae, positive, negative, latent, images, seed, cfg, sampler, scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive_text, text_neg_g=negative_text 이다.</li>
 </ul>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
     <summary><b>KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED</b></summary>
 <p></p>
-- 원래 에피션트 노드에서 Context를 입력 받을 수 있게 수정.<br>
+- 원래 에피션트 노드에서 context를 입력 받을 수 있게 수정.<br>
 - KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 프롬프트 텍스트 입력창을 추가한 것이다.<br>
   (생성할 이미지 사이즈는 image_source_to_use로 선택에 따라 context의 이미지 또는 latent를 참조하고 입력받은 프롬프트 텍스트는 context에 저장하지 않는다.)
 <p align="left">
@@ -80,7 +82,7 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
     <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler를 가져오기 또는 내보내기가 가능함<br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/57694db3-b520-47ef-b401-8fcbfd1eb63b" width="250" style="display: inline-block;"><br>
       - from node to ctx는 현재 노드의 seed, cfg, sampler, scheduler 설정을 context에 내보내기<br>
-      - from context는 Context에서 seed, cfg, sampler, scheduler를 가져오기<br>
+      - from context는 context에서 seed, cfg, sampler, scheduler를 가져오기<br>
       - from node only는 현재 노드의 seed, cfg, sampler, scheduler 설정을 이용하고 context에 저장하지는 않는다.<br>
     </li>
     <p></p>
