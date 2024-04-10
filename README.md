@@ -144,19 +144,29 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   - 로라 스태커와 동일하게 "🔍 View model info..."로 정보를 볼 수 있다.<p></p>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-    <details>
-        <summary><b>HighRes-Fix</b></summary>
-    <ul>
-        <li>Node that the gives user the ability to upscale KSampler results through variety of different methods.</li>
-        <li>Comes out of the box with popular Neural Network Latent Upscalers such as Ttl's <a href="https://github.com/Ttl/ComfyUi_NNLatentUpscale">ComfyUi_NNLatentUpscale</a> and City96's <a href="https://github.com/city96/SD-Latent-Upscaler">SD-Latent-Upscaler</a>.</li>
-        <li>Supports ControlNet guided latent upscaling. <i> (You must have Fannovel's <a href="https://github.com/Fannovel16/comfyui_controlnet_aux">comfyui_controlnet_aux</a> installed to unlock this feature)</i></li>
-        <li> Local models---The node pulls the required files from huggingface hub by default. You can create a models folder and place the modules there if you have a flaky connection or prefer to use it completely offline, it will load them locally instead. The path should be: ComfyUI/custom_nodes/efficiency-nodes-comfyui/models; Alternatively, just clone the entire HF repo to it: (git clone https://huggingface.co/city96/SD-Latent-Upscaler)   to ComfyUI/custom_nodes/efficiency-nodes-comfyui/models</li>
-    </ul>
-    <p align="center">
-      <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/HighResFix%20-%20Node%20Example.gif" width="1080">
-    </p>
-    
-    </details>
+<details>
+  <p></p>
+  <summary><b>Control Net Script 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/4ebd0668-f182-40a0-a882-35fb485ede5c" width="400">
+  </p>
+  - 컨트롤넷 스크립트. 샘플러와 연결하여 컨트롤넷을 사용하는 모드.<br>
+  <i>(KSampler (Efficient) 💬ED 또는 KSampler TEXT (Eff.) 💬ED에서만 동작한다.)</i><br>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
+  <p></p>
+  <summary><b>Control Net Script 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/66ca8ba4-f6e9-4881-ba8f-e737d8609515" width="400">
+  </p>
+  - KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED.<br>
+  <i>(기능은 로더에서 단순하게 Positive Text, Negative Text 맨 마지막에 임베딩 문자열을 추가해준다.)</i><br>
+  <p></p>
+  - 로라 스태커와 동일하게 "🔍 View model info..."로 정보를 볼 수 있다.<p></p>
+</details>
     <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
     <details>
         <summary><b>Noise Control</b></summary>
