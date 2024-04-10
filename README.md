@@ -64,12 +64,15 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
 - 원래 에피션트 노드에서 Context를 입력 받을 수 있게 모딩.<br>
 - KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 만든 것이다. 텍스트 입력창이 추가 되어 거기에서 포지티브와 네거티브 프롬프트를 따로 입력받는다.
   (이미지 사이즈는 입력받은 이미지나 latent를 참조하고 Context에 프롬프트 저장은 하지 않음.)
-<p align="center">
+<p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/37ca01cb-0b8e-4e14-9d86-7dcf09c3a481" width="500">
 </p>
     <p></p>
     <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler를 가져오기가 가능<br>
-      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/57694db3-b520-47ef-b401-8fcbfd1eb63b" width="250" style="display: inline-block;">
+      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/57694db3-b520-47ef-b401-8fcbfd1eb63b" width="250" style="display: inline-block;"><br>
+      - from node to ctx는 현재 노드의 seed, cfg, sampler, scheduler 설정을 context에 입력<br>
+      - from context는 Context에서 seed, cfg, sampler, scheduler를 가져오기<br>
+      - from node only는 현재 노드의 seed, cfg, sampler, scheduler 설정을 이용하고 저장하지는 않는다.<br>
       </li>
     <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있음.</li>
 </details>
