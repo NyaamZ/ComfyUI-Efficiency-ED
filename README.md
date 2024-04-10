@@ -1,7 +1,7 @@
 ✨🍬Efficiency Nodes for ComfyUI Version 2.0+ 에서 다양한 기능을 추가한 포크 버전. 원본의 설명은 https://github.com/jags111/efficiency-nodes-comfyui 를 참조하자.🍬
 
 
-<b> Efficiency Nodes ED 
+<b> Efficiency Nodes 💬ED
 =======
 ### 워크플로 (EXIF 있음):
 <p align="left">
@@ -27,7 +27,7 @@ Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의
 </p>
 Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.<br>
 
-### 추가한 ED 노드:
+### 추가한 💬ED 노드:
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
     <summary><b>Efficient Loader</b> & <b>Eff. Loader SDXL</b></summary>
