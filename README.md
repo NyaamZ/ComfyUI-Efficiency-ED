@@ -62,7 +62,7 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
 <details>
     <summary><b>KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED</b></summary>
 <p></p>
-- 원래 에피션트 노드에서 Context를 입력 받을 수 있게 모딩.<br>
+- 원래 에피션트 노드에서 Context를 입력 받을 수 있게 수정.<br>
 - KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 만든 것이다. 텍스트 입력창이 추가 되어 거기에서 포지티브와 네거티브 프롬프트를 따로 입력받는다.
   (이미지 사이즈는 입력받은 이미지나 latent를 참조하고 Context에 프롬프트 저장은 하지 않음.)
 <p align="left">
