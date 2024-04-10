@@ -186,84 +186,31 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <p></p>
 </details>
 
-## Workflow Examples:
 
-Kindly load all PNG files in same name in the (workflow driectory) to comfyUI to get all this workflows. The PNG files have the json embedded into them and are easy to drag and drop !<br>
+### 요구사항:
+Efficiency Nodes 💬ED는 <a href="https://github.com/pythongosssss/ComfyUI-Custom-Scripts">ComfyUI-Custom-Scripts</a>가 필요함.<p></p>
+FaceDetailer 💬ED 와 Ultimate SD Upscale 💬ED 사용을 위해서는 각각 <a href="https://github.com/ltdrdata/ComfyUI-Impact-Pack">Impact Pack</a>과 <a href="https://github.com/ssitu/ComfyUI_UltimateSDUpscale">Ultimate SD Upscale</a>이 필요함.<br><br>
 
-1. HiRes-Fixing<br>
-   [<img src="https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/HiResfix_workflow.png" width="800">](https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/HiResfix_workflow.png)<br>
+## **설치:**
+매니저 -> Install via git URL -> https://github.com/NyaamZ/efficiency-nodes-comfyui 입력<br><br>
 
-2. SDXL Refining & **Noise Control Script**<br>
-   [<img src="https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/SDXL_base_refine_noise_workflow.png" width="800">](https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/SDXL_base_refine_noise_workflow.png)<br>
+## ***에러 발생시 해결법***
+대부분 뭐가 없으면 나오는 문제다. 그리고 아래 나오는 에러들은 커스텀 노드에서만 발생하는게 아니라 바닐라 CompyUI 에서도 똑같이 발생하는 에러다.<br><br>
 
-3. **XY Plot**: LoRA <code>model_strength</code> vs <code>clip_strength</code><br>
-   [<img src="https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/Eff_XYPlot%20-%20LoRA%20Model%20vs%20Clip%20Strengths01.png" width="800">](https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/Eff_XYPlot%20-%20LoRA%20Model%20vs%20Clip%20Strengths01.png)<br>
+<li>Load Image 에서 발생하는 에러 - 거기다 아무 이미지나 넣어주면 된다. (처음에 한번만 넣으면 됨.)</li><p></p>
 
-4. Stacking Scripts: **XY Plot** + **Noise Control** + **HiRes-Fix**<br>
-   [<img src="https://github.com/LucianoCirino/efficiency-nodes-comfyui/blob/v2.0/workflows/XYPlot%20-%20Seeds%20vs%20Checkpoints%20%26%20Stacked%20Scripts.png" width="800">](https://github.com/LucianoCirino/efficiency-nodes-comfyui/blob/v2.0/workflows/XYPlot%20-%20Seeds%20vs%20Checkpoints%20%26%20Stacked%20Scripts.png)<br>
+<li>에피션트 로더 - 표시창에는 써져있지만 모델이나 VAE가 실제로 없을때 에러가 뜬다. 리프레시 누르고 모델을 설정해주면 해결.<br>
+                         (모델은 반드시 있어야 한다. 없으면 매니저 > 인스톨 모델에서 checkpoints 검색해서 Type:checkpoints, Base: SD 1.5나 SDXL 을 다운.</li><p></p>
 
-5. Stacking Scripts:  **HiRes-Fix** (with ControlNet)<br>
-  [<img src="https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/eff_animatescriptWF001.gif" width="800">](https://github.com/jags111/efficiency-nodes-comfyui/blob/main/workflows/eff_animatescriptWF001.gif)<br>
+<li>로라 스태커, 임베딩 스태커 - 표시창에는 써져있지만 로라나 임베딩이 실제로 없을때 에러가 뜬다. 리프레시 누르고 로라를 설정해주면 해결.</li><p></p>
 
-6. SVD workflow: **Stable Video Diffusion** + *Kohya Hires** (with latent control)<br>
-  <br>
+<li>페이스 디테일러 - 표시창에는 써져있지만 모델이 없을때 에러가 뜬다. 리프레시 누르고 모델을 설정해주면 해결.<br>
+                              (bbox_detector는 반드시 있어야 한다. 없으면 매니저 > 인스톨 모델 에서 bbox 검색해서 다운)</li><p></p>
 
-
-### Dependencies
-The python library <i><a href="https://github.com/danthedeckie/simpleeval" >simpleeval</a></i> is required to be installed if you wish to use the **Simpleeval Nodes**.
-<pre>pip install simpleeval</pre>
-Also can be installed with a simple pip command <br>
-'pip install simpleeval'
-
-A single file library for easily adding evaluatable expressions into python projects. Say you want to allow a user to set an alarm volume, which could depend on the time of day, alarm level, how many previous alarms had gone off, and if there is music playing at the time.
-
-check Notes for more information.
-
-## **Install:**
-To install, drop the "_**efficiency-nodes-comfyui**_" folder into the "_**...\ComfyUI\ComfyUI\custom_nodes**_" directory and restart UI.
-
-## Todo
-
-[ ] Add guidance to notebook
+<li>울티메이트 업스케일러 - 표시창에는 써져있지만 모델이 없을때 에러가 뜬다. 리프레시 누르고 모델을 설정해주면 해결.<br>
+                                (업스케일 모델은 반드시 있어야 한다. 없으면 매니저 > 인스톨 모델 에서 upscale 검색해서 다운)</li><br><br>
 
 
-# Comfy Resources
 
-**Efficiency Linked Repos**
-- [BlenderNeko ComfyUI_ADV_CLIP_emb](https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb)  by@BlenderNeko
-- [Chrisgoringe cg-noise](https://github.com/chrisgoringe/cg-noise)  by@Chrisgoringe
-- [pythongosssss ComfyUI-Custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts)  by@pythongosssss
-- [shiimizu ComfyUI_smZNodes](https://github.com/shiimizu/ComfyUI_smZNodes)  by@shiimizu
-- [LEv145_images-grid-comfyUI-plugin](https://github.com/LEv145/images-grid-comfy-plugin))  by@LEv145
-- [ltdrdata-ComfyUI-Inspire-Pack](https://github.com/ltdrdata/ComfyUI-Inspire-Pack) by@ltdrdata
-- [pythongosssss-ComfyUI-custom-Scripts](https://github.com/pythongosssss/ComfyUI-Custom-Scripts) by@pythongosssss
-- [RockOfFire-ComfyUI_Comfyroll_CustomNodes](https://github.com/RockOfFire/ComfyUI_Comfyroll_CustomNodes) by@RockOfFire 
-
-**Guides**:
-- [Official Examples (eng)](https://comfyanonymous.github.io/ComfyUI_examples/)- 
-- [ComfyUI Community Manual (eng)](https://blenderneko.github.io/ComfyUI-docs/) by @BlenderNeko
-
-- **Extensions and Custom Nodes**:  
-- [Plugins for Comfy List (eng)](https://github.com/WASasquatch/comfyui-plugins) by @WASasquatch
-- [ComfyUI tag on CivitAI (eng)](https://civitai.com/tag/comfyui)-   
-- [Tomoaki's personal Wiki (jap)](https://comfyui.creamlab.net/guides/) by @tjhayasaka
-
-  ## Support
-If you create a cool image with our nodes, please show your result and message us on twitter at @jags111 or @NeuralismAI .
-
-You can join the <a href="https://discord.gg/vNVqT82W" alt="Neuralism Discord"> NEURALISM AI DISCORD </a> or <a href="https://discord.gg/UmSd4qyh" alt =Jags AI Discord > JAGS AI DISCORD </a> 
-Share your work created with this model. Exchange experiences and parameters. And see more interesting custom workflows.
-
-Support us in Patreon for more future models and new versions of AI notebooks.
-- tip me on <a href="https://www.patreon.com/jags111"> [patreon]</a>
-
- My buymeacoffee.com pages and links are here and if you feel you are happy with my work just buy me a coffee !
-
- <a href="https://www.buymeacoffee.com/jagsAI"> coffee for JAGS AI</a> 
-
-Thank you for being awesome!
-
-<img src = "images/ComfyUI_temp_vpose_00005_.png" width = "50%"> 
-
-<!-- end support-pitch -->
-
+## 알려진 버그
+<li>comfyui-art-venture : 임포팅 충돌로 FaceDetailer 💬ED 로딩이 실패함</li><p></p>
