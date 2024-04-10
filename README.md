@@ -200,7 +200,7 @@ FaceDetailer 💬ED 와 Ultimate SD Upscale 💬ED 사용을 위해서는 각각
 <li>Load Image 에서 발생하는 에러 - 거기다 아무 이미지나 넣어주면 된다. (처음에 한번만 넣으면 됨.)</li><p></p>
 
 <li>에피션트 로더 - 표시창에는 써져있지만 모델이나 VAE가 실제로 없을때 에러가 뜬다. 리프레시 누르고 모델을 설정해주면 해결.<br>
-                         (모델은 반드시 있어야 한다. 없으면 매니저 > 인스톨 모델에서 checkpoints 검색해서 Type:checkpoints, Base: SD 1.5나 SDXL 을 다운.</li><p></p>
+                         (모델은 반드시 있어야 한다. 없으면 매니저 > 인스톨 모델에서 checkpoints 검색해서 Type:checkpoints, Base: SD 1.5나 SDXL 을 다운.)</li><p></p>
 
 <li>로라 스태커, 임베딩 스태커 - 표시창에는 써져있지만 로라나 임베딩이 실제로 없을때 에러가 뜬다. 리프레시 누르고 로라를 설정해주면 해결.</li><p></p>
 
