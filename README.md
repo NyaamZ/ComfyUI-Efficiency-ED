@@ -52,7 +52,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
         <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/9ff41533-ba10-4707-a61b-61167aea23a9" width="250" style="display: inline-block;"><br>
           <i>(이름 입력 창은 하위 폴더별로 서브메뉴가 만들어지며 "🔍 View model info..."에서 "save as preview"했던 이미지를 모델 선택시 보여준다.</i><br>
           <i>모델의 프리뷰 이미지가 있다면 이름 옆에 '*'로 표시된다.</i><br>
-          <i>폴더와 모델이 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
+          <i>폴더와 모델이 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 <code>-</code>를 붙여주면 정렬이 된다.)</i><br>
     </li>
     <p></p>
     <li>Tiled VAE 인코딩<br>
@@ -124,7 +124,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <li>Efficient Loader 💬ED와 마찬가지로 이름 입력 창은 하위 폴더별로 서브메뉴가 만들어지며 로라의 프리뷰 이미지 표시<br>
     <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/68240631-6962-4601-9f7a-2913a9eebedb" width="300"><br>
     <i>(로라의 프리뷰 이미지가 있다면 이름 옆에 '*'로 표시된다.</i><br>
-    <i>폴더와 로라가 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
+    <i>폴더와 로라가 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 <code>-</code>를 붙여주면 정렬이 된다.)</i><br>
   </li>
   <p></p>
   <li>"🔍 View model info..."는 아래처럼 트리거 워드(Trained words)를 찾는데 편리하다.<br>
