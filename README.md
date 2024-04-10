@@ -3,7 +3,7 @@
 
 <b> Efficiency Nodes ED 
 =======
-### 워크플로 (EXIF 있음)
+### 워크플로 (EXIF 있음):
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/a2cb4278-4294-4a16-9c07-14ae9081f1f0" width="800" style="display: inline-block;">
 </p>
@@ -27,7 +27,7 @@ Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의
 </p>
 Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.<br>
 
-### Nodes:
+### 추가한 ED 노드:
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
     <summary><b>Efficient Loader</b> & <b>Eff. Loader SDXL</b></summary>
