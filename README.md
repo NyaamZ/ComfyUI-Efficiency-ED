@@ -50,7 +50,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
     </li>
     <li>모델 선택시 프리뷰 이미지 표시<br>
         <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/9ff41533-ba10-4707-a61b-61167aea23a9" width="250" style="display: inline-block;"><br>
-          <i>(하위 폴더별로 서브메뉴에 표시하며 "🔍 View model info..."에서 "save as preview"했던 이미지를 모델 선택시 보여준다.</i><br>
+          <i>(이름 입력 창은 하위 폴더별로 서브메뉴가 만들어지며 "🔍 View model info..."에서 "save as preview"했던 이미지를 모델 선택시 보여준다.</i><br>
           <i>모델의 프리뷰 이미지가 있다면 이름 옆에 '*'로 표시된다.</i><br>
           <i>폴더와 모델이 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
     </li>
@@ -65,7 +65,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
     <p></p>
     <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
     <p></p>
-    <li>Efficient Loader 💬ED에서 context로 출력하는 값은, model, clip, vae, positive, negative, latent, images, seed, cfg, sampler, scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive_text, text_neg_g=negative_text 이다.</li>
+    <li>Efficient Loader 💬ED에서 context로 출력하는 값은: model, clip, vae, positive, negative, latent, images, seed, cfg, sampler, scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive_text, text_neg_g=negative_text 이다.</li>
 </ul>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
@@ -100,25 +100,50 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
-    <summary><b>Script Nodes</b></summary>
-    
-- A group of node's that are used in conjuction with the Efficient KSamplers to execute a variety of 'pre-wired' set of actions.
-- Script nodes can be chained if their input/outputs allow it. Multiple instances of the same Script Node in a chain does nothing.
-    <p align="center">
-      <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/ScriptChain.png" width="1080">
-    </p>
-    <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-    <details>
-        <summary><b>XY Plot</b></summary>
-    <ul>
-        <li>Node that allows users to specify parameters for the Efficiency KSamplers to plot on a grid.</li>
-    </ul>
-    <p align="center">
-      <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/XY%20Plot%20-%20Node%20Example.png" width="1080">
-    </p>
-    
-    </details>
-    <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+    <summary><b>Load Image 💬ED</b></summary>
+<p></p>
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/6defb14b-7492-4a75-919a-f5632bc77ec5" width="300">
+</p>
+- 원래 Load Image에서 프롬프트 텍스트를 출력하게 수정한 노드이다.<p></p>
+<li>큐를 돌리면 아래처럼 프롬프트, seed, 이미지 사이즈가 표시된다. <br>
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/5b18adb0-5e8e-4cc0-963d-287cb5d19e38" width="500"><br>
+  (불행히도 이미 설치된 노드의 프롬프트만 추출할 수 있으며 설치되지 않은 노드는 추출하지 못한다.)<br>
+</li>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
+  <summary><b>LoRA Stacker</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/857d98ec-b7f5-4957-9fc3-68a7245829cc" width="300">
+  </p>
+  - 최대 8개까지의 로라를 한번에 로딩할 수있는 노드이다.<p></p>
+  <p></p>
+  <li>Efficient Loader 💬ED와 마찬가지로 이름 입력 창은 하위 폴더별로 서브메뉴가 만들어지며 로라의 프리뷰 이미지 표시<br>
+    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/68240631-6962-4601-9f7a-2913a9eebedb" width="300"><br>
+    <i>(로라의 프리뷰 이미지가 있다면 이름 옆에 '*'로 표시된다.</i><br>
+    <i>폴더와 로라가 함께 있을땐 유형 별로 정렬이 안되는데 그땐 폴더 이름 맨 앞에 '-'를 붙여주면 정렬이 된다.)</i><br>
+  </li>
+  <p></p>
+  <li>"🔍 View model info..."는 아래처럼 트리거 워드(Trained words)를 찾는데 편리하다.<br>
+    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/fe112563-4189-4d7e-aa41-72b8030fa69a" width="400">
+  </li>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
+  <p></p>
+  <summary><b>Embedding Stacker 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/66ca8ba4-f6e9-4881-ba8f-e737d8609515" width="400">
+  </p>
+  - 임베딩 일일이 치는거 스펠링도 기억안나고 짜증나서 하나 만들었다.<br>
+  <i>(기능은 로더에서 단순하게 Positive Text, Negative Text 맨 마지막에 임베딩 문자열을 추가해준다.)</i><br>
+  <p></p>
+  - 로라 스태커와 동일하게 "🔍 View model info..."로 정보를 볼 수 있다.<p></p>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
     <details>
         <summary><b>HighRes-Fix</b></summary>
     <ul>
