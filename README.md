@@ -38,12 +38,13 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
       </li>
     <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. 후에 Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있다.</li>
+    <p></p>
     <li>오른 클릭에 드롭다운 메뉴 추가.<br>
         <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/47995eca-94fb-4e52-b77b-2a53e9f292d0" width="150" style="display: inline-block;">
-        <p>"🔍 View model info..."는 모델의 정보를 표시한다.<br>          
+        <p> "🔍 View model info..."는 모델의 정보를 표시한다.<br>          
           <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f7cf378c-cd8a-49cb-9389-5681caacf130" width="250" style="display: inline-block;"><br>
           <i>("🔍 View model info..."는 크기가 큰 모델은 해쉬값을 찾느라 '첫' 로딩이 느리다. 처음 한번은 "save as preview"를 눌러 주는걸 권장.)</i><br></p>
-        <p>"📐 Aspect Ratio..."는 image_width와 image_height에 선택한 값을 입력한다.<br>
+        <p> "📐 Aspect Ratio..."는 image_width와 image_height에 선택한 값을 입력한다.<br>
           <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f92fdd33-ddcb-4b42-904c-4c67a52e4aa0" width="250" style="display: inline-block;"><br>
           <i>(Txt2Img 모드로 이미지를 만들 때 편리하다. ◆ 표시는 추천 해상도)</i><br></p>
     </li>
@@ -61,6 +62,7 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
     </li>
     <p></p>
     <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
+    <p></p>
     <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
 </ul>
 </details>
@@ -85,12 +87,12 @@ Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적�
     <li>image_source_to_use 설정<br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/65cb4134-d784-4810-a56c-49b09f8bf8ef" width="250" style="display: inline-block;"><br>
       - context의 Image나 latent 중 무엇을 이미지 소스로 샘플링할까 선택하는 창이다.<br>
-      - Image가 선택되면 내부에서 vae decode 설정에 따라 vae encode를 해서 사용하며 image_opt가 입력되면 그 이미지를 우선 사용한다.
+      - Image가 선택되면 vae decode 설정에 따라 내부에서 vae 인코딩을 하며 image_opt가 입력되면 그 이미지를 우선 사용한다.
     </li>
     <p></p>
     <li>vae decode 설정<br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/592edea3-2e16-4c29-90a3-3dd5ddd0eb63" width="250" style="display: inline-block;"><br>
-      - 샘플링 후 이미지 생성을 위한 vae 디코딩시에 무엇을 사용할지 선택하는 창이다.<br>
+      - 샘플링 후 이미지 생성을 위한 vae 디코딩/인코딩시에 무엇을 사용할지 선택하는 창이다.<br>
       - True, True(tiled), false가 있으며 기본은 True, True(tiled)는 Tiled VAE decode 사용(느리다. 대신 VRAM이 부족해도 큰 이미지 처리 가능), false는 이미지를 내보내지 않고 context에 latent만 내보낸다.
     </li>
 </details>
