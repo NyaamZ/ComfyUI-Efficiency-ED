@@ -72,9 +72,10 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 <details>
     <summary><b>KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED</b></summary>
 <p></p>
-- 원래 에피션트 노드에서 context를 입력 받을 수 있게 수정.<br>
-- KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 프롬프트 텍스트 입력창을 추가한 것이다.<br>
-  (생성할 이미지 사이즈는 image_source_to_use로 선택에 따라 context의 이미지 또는 latent를 참조하고 입력받은 프롬프트 텍스트는 context에 저장하지 않는다.)
+- 원래 에피션트 노드에서 context를 입력 받을 수 있게 수정.<p></p>
+- 이미지를 샘플링 후 context와 OUTPUT_IMAGE에 출력한다. SOURCE_IMAGE는 입력받은 이미지.<p></p>
+- KSampler TEXT (Eff.) 💬ED는 배경 제작용으로 따로 프롬프트 텍스트 입력창을 추가한 버전.<br>
+  (KSampler TEXT (Eff.) 💬ED가 생성하는 이미지 사이즈는 image_source_to_use로 선택에 따라 context의 이미지 또는 latent를 참조하고 텍스트 입력창의 프롬프트 텍스트는 context에 저장하지 않는다.)
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/37ca01cb-0b8e-4e14-9d86-7dcf09c3a481" width="500">
 </p>
@@ -108,7 +109,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 - 원래 Load Image에서 프롬프트 텍스트를 출력하게 수정한 노드이다.<p></p>
 <li>큐를 돌리면 아래처럼 프롬프트, seed, 이미지 사이즈가 표시된다. <br>
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/5b18adb0-5e8e-4cc0-963d-287cb5d19e38" width="500"><br>
-  (불행히도 이미 설치된 노드의 프롬프트만 추출할 수 있으며 설치되지 않은 노드는 추출하지 못한다.)<br>
+  (아쉽게도 이미 설치된 노드의 프롬프트만 추출할 수 있으며, 설치되지 않은 노드는 추출하지 못한다.)<br>
 </li>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
@@ -139,7 +140,8 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/66ca8ba4-f6e9-4881-ba8f-e737d8609515" width="400">
   </p>
   - 임베딩 일일이 치는거 스펠링도 기억안나고 짜증나서 하나 만들었다.<br>
-  <i>(기능은 로더에서 단순하게 Positive Text, Negative Text 맨 마지막에 임베딩 문자열을 추가해준다.)</i><br>
+  <i>(기능은 단순하게 💬ED 로더 positive, negative의 맨 마지막에 임베딩 문자열을 추가해준다.</i><br>
+  <i> 💬ED 로더만 사용 가능함.)</i><br>
   <p></p>
   - 로라 스태커와 동일하게 "🔍 View model info..."로 정보를 볼 수 있다.<p></p>
 </details>
@@ -157,103 +159,31 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
   <p></p>
-  <summary><b>Control Net Script 💬ED</b></summary>
+  <summary><b>FaceDetailer 💬ED</b></summary>
   <p></p>
   <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/66ca8ba4-f6e9-4881-ba8f-e737d8609515" width="400">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0e389054-ad3e-4f02-ba2b-c1ac38af47ce" width="250">
   </p>
-  - KSampler (Efficient) 💬ED</b>, <b>KSampler TEXT (Eff.) 💬ED.<br>
-  <i>(기능은 로더에서 단순하게 Positive Text, Negative Text 맨 마지막에 임베딩 문자열을 추가해준다.)</i><br>
+  - Impact pack의 FaceDetailer 애드온. Impact pack이 설치되지 않았다면 보이지 않는다.<p></p>
+  - context를 입력받을 수 있게 수정한 버전.<p></p>
+  - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있으며, 각종 모델 로더를 통합한 노드.<p></p>
+  <li>아래처럼 positive_text_opt나 negative_text_opt에 프롬프트 텍스트를 입력할 수 있다.<br>
+    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/447f8c44-75a5-4714-8b79-ad3977f58cae" width="400"><br>
+    <i>(FaceDetailer 💬ED에서 눈을 더 반짝이게 하고 싶다던가 표정을 바꾸고 싶을 때 유용하다.</i><br>
+    <i>프롬프트 텍스트를 입력하면 context의 프롬프트는 무시하고 입력된 프롬프트를 우선 사용한다.)</i><br>
+  </li>
+</details>
+<details>
   <p></p>
-  - 로라 스태커와 동일하게 "🔍 View model info..."로 정보를 볼 수 있다.<p></p>
-</details>
-    <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-    <details>
-        <summary><b>Noise Control</b></summary>
-    <ul>
-        <li>This node gives the user the ability to manipulate noise sources in a variety of ways, such as the sampling's RNG source.</li>
-        <li>The <a href="https://github.com/shiimizu/ComfyUI_smZNodes">CFG Denoiser</a> noise hijack was developed by smZ, it allows you to get closer recreating Automatic1111 results.</li>
-            <p></p><i>Note: The CFG Denoiser does not work with a variety of conditioning types such as ControlNet & GLIGEN</i></p>
-        <li>This node also allows you to add noise <a href="https://github.com/chrisgoringe/cg-noise">Seed Variations</a> to your generations.</li>
-        <li>For trying to replicate Automatic1111 images, this node will help you achieve it. Encode your prompt using "length+mean" <code>token_normalization</code> with "A1111" <code>weight_interpretation</code>, set the Noise Control Script node's <code>rng_source</code> to "gpu", and turn the <code>cfg_denoiser</code> to true.</li>
-    </ul>
-    <p align="center">
-      <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20Noise%20Control%20Script.png" width="320">
-    </p>
-    
-    </details>
-    <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-    <details>
-        <summary><b>Tiled Upscaler</b></summary>
-    <ul>
-        <li>The Tiled Upscaler script attempts to encompas BlenderNeko's <a href="https://github.com/BlenderNeko/ComfyUI_TiledKSampler">ComfyUI_TiledKSampler</a> workflow into 1 node.</li>
-        <li>Script supports Tiled ControlNet help via the options.</li>
-        <li>Strongly recommend the <code>preview_method</code> be "vae_decoded_only" when running the script.</li>
-    </ul>
-    <p align="center">
-      <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/Tiled%20Upscaler%20-%20Node%20Example.gif" width="1080">
-    </p>
-    
-    </details>
-        <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-    <details>
-        <summary><b>AnimateDiff</b></summary>
-    <ul>
-        <li>To unlock the AnimateDiff script it is required you have installed Kosinkadink's <a href="https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved">ComfyUI-AnimateDiff-Evolved</a>.</li>
-        <li>The latent <code>batch_size</code> when running this script becomes your frame count.</li>
-    </ul>
-    <p align="center">
-      <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/AnimateDiff%20-%20Node%20Example.gif" width="1080">
-    </p>
-    
-    </details>
-</details>
-
-<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-<details>
-    <summary><b>Image Overlay</b></summary>
-<ul>
-    <li>Node that allows for flexible image overlaying. Works also with image batches.</li>
-</ul>
-<p align="center">
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/Image%20Overlay%20-%20Node%20Example.png" width="1080">
-</p>
- 
-</details>
-<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-<details>
-    <summary><b>SimpleEval Nodes</b></summary>
-<ul>
-    <li>A collection of nodes that allows users to write simple Python expressions for a variety of data types using the <i><a href="https://github.com/danthedeckie/simpleeval" >simpleeval</a></i> library.</li>
-    <li>To activate you must have installed the simpleeval library in your Python workspace.</li>
-    <pre>pip install simpleeval</pre>
-</ul>
-<p align="center">
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20Evaluate%20Integers.png" width="320">
-  &nbsp; &nbsp;
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20Evaluate%20Floats.png" width="320">
-  &nbsp; &nbsp;
-  <img src="https://github.com/LucianoCirino/efficiency-nodes-media/blob/main/images/nodes/NODE%20-%20Evaluate%20Strings.png" width="320">
-</p>
-
-</details>
-
-<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
-<details>
-    <summary><b>Latent Upscale nodes</b></summary>
-<ul>
-    <li>Forked from NN latent this node provides some remarkable neural enhancement to the latents making scaling a cool task</li>
-    <li>Both NN latent upscale and Latent upscaler does the Latent improvemnet in remarkable ways. If you face any issue regarding same please install the nodes from this link([SD-Latent-Upscaler](https://github.com/city96/SD-Latent-Upscaler) and the NN latent upscale from [ComfyUI_NNlatentUpscale](https://github.com/Ttl/ComfyUi_NNLatentUpscale) </li>
-    
-</ul>
-<p align="center">
-  <img src="images/2023-12-08_19-53-37.png" width="320">
-  &nbsp; &nbsp;
-  <img src="images/2023-12-08_19-54-11.png" width="320">
-  &nbsp; &nbsp;
-  
-</p>
-
+  <summary><b>Ultimate SD Upscale 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/34fc20e4-8577-4716-9197-f63a31a6a31f" width="200">
+  </p>
+  - Ultimate SD Upscale의 애드온. Ultimate SD Upscale이 설치되지 않았다면 보이지 않는다.<p></p>
+  - context를 입력받을 수 있게 수정한 버전.<p></p>
+  - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있으며, upscale 모델 로더를 통합한 노드.
+  <p></p>
 </details>
 
 ## Workflow Examples:
