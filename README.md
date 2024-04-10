@@ -13,34 +13,41 @@
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/1c55eecb-7c9d-402d-bf3d-9ecb4c109d3d" width="600" style="display: inline-block;">
 </p>
-그래서 어지럽게 널린 링크들을 위의 그림 처럼 context 단 한줄로 정리했다!<br><br>
-Context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다. (rgthree의 커스텀 노드에서 차용)<br>
-
-Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 Context와 호환된다.
+Context 사용해 어지럽게 널린 링크들을 위의 그림 처럼 단 한개로 정리했다!<br><br>
+Context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다.<br>
+(rgthree의 커스텀 노드에서 차용)<br>
+Efficiency Nodes 💬ED의 Context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 Context와 호환된다.<br><br>
+<details>
+  <summary><b>Context 간단 사용법</b></summary>
+<ul>
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/cf795977-8ab6-4646-9d28-02737122cd88" width="300" style="display: inline-block;">
 </p>
-Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드가 필요하다.<br><br>
+Context에서 특정한 요소를 추출하려면 위의 그림처럼 rgthree의 context 노드로 추출할 수 있다.<br><br>
 
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d82d0bd1-45fc-4f72-8cd8-15b61693db8c" width="300" style="display: inline-block;">
 </p>
 Context에 특정한 요소를 입력하려면 위의 그림처럼 하면된다.<br>
+</ul>
+</details>
 
 ### 추가한 💬ED 노드:
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
     <summary><b>Efficient Loader 💬ED</b></summary>
 <ul>
-    <li><i>(클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능)</i><br>
+    <li>클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정 가능<br><i>(Txt2Img로 설정시 Ksampler (Efficient) 💬ED의 denoise 값이 자동으로 1로 설정.)</i><br>
       <p align="left">
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
       </p>
       </li>
-    <li>seed, cfg, sampler, scheduler를 셋팅하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 셋팅을 이용할 수 있음.</li>
+    <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있음.</li>
     <li>오른 클릭에 드롭다운 메뉴 추가.
-        <p></p><img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/47995eca-94fb-4e52-b77b-2a53e9f292d0" width="240" style="display: inline-block;"></p>
-         <p><img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">"🔍 View model info..."는 모델의 정보를 표시함.</p></li>
+        <p></p><img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/47995eca-94fb-4e52-b77b-2a53e9f292d0" width="150" style="display: inline-block;"></p>
+         <p>"🔍 View model info..."는 모델의 정보를 표시한다.<br>
+          <i>("🔍 View model info..."는 크기가 큰 모델은 해쉬값을 찾느라 '첫' 로딩이 느리다. 처음 한번은 save as preview를 눌러 주는걸 권장.)</i><br>
+          <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f7cf378c-cd8a-49cb-9389-5681caacf130" width="250" style="display: inline-block;"></p></li>
     <li>로라, 임베딩, 컨트롤 넷 스태커를 <code>lora_stack</code>과 <code>cnet_stack</code>에 입력 가능.</li>
     <li>positive와 negative 프롬프트 텍스트 박스 내장. <code>token_normalization</code>과 <code>weight_interpretation</code>에서 프롬프트 <a href="https://github.com/BlenderNeko/ComfyUI_ADV_CLIP_emb">인코딩</a> 방식 설정 가능.</li>
     
