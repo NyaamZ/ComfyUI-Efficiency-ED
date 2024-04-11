@@ -4206,7 +4206,7 @@ class TSC_LoRA_Stack2String:
 
 #################################################################
 #################################################################
-#                                                          ED
+#                                                          ED                                                               #
 #################################################################
 #################################################################
 
@@ -4214,7 +4214,7 @@ import nodes
 from server import PromptServer
 from PIL import Image, ImageOps, ImageSequence
 
-############## ED rgthree Context embedding
+############## ED rgthree Context
 _all_ed_context_input_output_data = {
   "base_ctx": ("base_ctx", "RGTHREE_CONTEXT", "CONTEXT"),
   "model": ("model", "MODEL", "MODEL"),
@@ -4275,24 +4275,24 @@ cashe_ed = {
     "ultimate_sd_upscaler": []
 }
 
-def cashload_ed(cashetype, model_name):
+def cashload_ed(cashe_type, model_name):
     global cashe_ed
-    for entry in cashe_ed[cashetype]:
+    for entry in cashe_ed[cashe_type]:
         if entry[0] == model_name:
-            print(f"\033[36mED node use {cashetype} cashe: {entry[0]}\033[0m")
+            print(f"\033[36mED node use {cashe_type} cashe: {entry[0]}\033[0m")
             return entry[1]
     return None
     
-def cashsave_ed(cashetype, model_name, model, max_cashe):
+def cashsave_ed(cashe_type, model_name, model, max_cashe):
     global cashe_ed
-    if len(cashe_ed[cashetype])>= max_cashe:
-        cashe_ed[cashetype].pop(0)
-    cashe_ed[cashetype].append([model_name, model])
-    print(f"\033[36mED node save {cashetype} cashe: {model_name}\033[0m")
+    if len(cashe_ed[cashe_type])>= max_cashe:
+        cashe_ed[cashe_type].pop(0)
+    cashe_ed[cashe_type].append([model_name, model])
+    print(f"\033[36mED node save {cashe_type} cashe: {model_name}\033[0m")
     return
 
 
-########################################################################################################################
+############################################################################################################
 
 def populate_items(names, type):
     idx = None
@@ -4345,8 +4345,7 @@ class TSC_LoRA_Stacker_ED:
             inputs["required"][f"lora_name_{i}"] = lora_name_array
             inputs["required"][f"lora_wt_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
-            inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
-            #print(f"\033[36mlora stacker{i}////:{names}\033[0m")            
+            inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})        
 
         inputs["optional"] = {
             "lora_stack": ("LORA_STACK",)
@@ -4405,7 +4404,6 @@ class TSC_EfficientLoader_ED():
                               "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
                               "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
                               "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
-                              #"use_kohya_deep_shrink": ("BOOLEAN", {"default": False}),
                               "positive": ("STRING", {"default": "CLIP_POSITIVE","multiline": True}),
                               "negative": ("STRING", {"default": "CLIP_NEGATIVE", "multiline": True}),
                               "token_normalization": (["none", "mean", "length", "length+mean"],),
@@ -4414,22 +4412,20 @@ class TSC_EfficientLoader_ED():
                               "image_height": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 1}),
                               },
                 "optional": {
-                             "lora_stack": ("LORA_STACK", ),
+                             "lora_stack": ("LORA_STACK",),
                              "cnet_stack": ("CONTROL_NET_STACK",),
-                             "pixels": ("IMAGE", ),
+                             "pixels": ("IMAGE",),
                              "mask": ("MASK",)},
                 "hidden": { "prompt": "PROMPT",
                             "my_unique_id": "UNIQUE_ID",
                             "extra_pnginfo": "EXTRA_PNGINFO",}
                 }
-                
         names = types["required"]["ckpt_name"][0]
-        populate_items(names, "checkpoints")
-        
+        populate_items(names, "checkpoints")        
         return types
 
     RETURN_TYPES = ("RGTHREE_CONTEXT", "MODEL", "DEPENDENCIES",)
-    RETURN_NAMES = ("CONTEXT", "MODEL", "DEPENDENCIES")
+    RETURN_NAMES = ("CONTEXT", "MODEL", "DEPENDENCIES",)
     FUNCTION = "efficientloader_ed"
     CATEGORY = "Efficiency Nodes/Loaders"
         
@@ -4488,7 +4484,6 @@ class TSC_EfficientLoader_ED():
             workflow = extra_pnginfo["workflow"]
             for node in workflow["nodes"]:
                 if node["id"] == int(my_unique_id):
-                    #model_output_only = node["properties"]["Model output only (Not included ctx)"]
                     this_sync = node["properties"]["Image size sync this"]
                     multi_sync = node["properties"]["Image size sync MultiAreaConditioning"]      
                     tiled_vae_encode = node["properties"]["Use tiled VAE encode"]           
@@ -4604,7 +4599,7 @@ class TSC_EfficientLoader_ED():
             # negative=negative_encoded, latent=samples_latent, images=pixels, seed=seed, cfg=cfg, sampler=sampler_name, 
             # scheduler=scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive, text_pos_l=positive_refiner, text_neg_g=negative, text_neg_l=negative_refiner)
 
-        return (context, model, dependencies)
+        return (context, model, dependencies,)
 
 ###########
 #=======================================================================================================================
@@ -4664,7 +4659,7 @@ class TSC_EfficientLoader_ED():
 
 ########################################################################################################################
 # LoadImage_ED
-prompt_blacklist = set([
+prompt_blacklist_ed = set([
     'filename_prefix', 'file'
 ])
 
@@ -4680,8 +4675,8 @@ class LoadImage_ED:
 
     CATEGORY = "Efficiency Nodes/Image"
 
-    RETURN_TYPES = ("IMAGE", "MASK", "STRING")
-    RETURN_NAMES = ("IMAGE", "MASK", "PROMPT_TEXT")
+    RETURN_TYPES = ("IMAGE", "MASK", "STRING",)
+    RETURN_NAMES = ("IMAGE", "MASK", "PROMPT_TEXT",)
     FUNCTION = "doit"
 
     OUTPUT_NODE = True
@@ -4764,7 +4759,7 @@ class LoadImage_ED:
                         inputs.update(input_types['optional'])
 
                     for name, value in inputs.items():
-                        if name in prompt_blacklist:
+                        if name in prompt_blacklist_ed:
                             continue
                         
                         if value[0] == 'STRING' and name in v['inputs'] and not isinstance(v['inputs'][name], list):
@@ -4782,30 +4777,30 @@ class LoadImage_ED:
 
         _, image_height, image_width, _ = output_image.shape
         text += "\nImage Size: " + str(image_width) + " x " + str(image_height )
-        return (output_image, output_mask, text)
+        return (output_image, output_mask, text,)
 
 ###===========================================================
 # Embedding_Stacker
 class Embedding_Stacker_ED:
-    MAX_EMB_COUNT = 9
+    MAX_EMBEDDING_COUNT = 9
 
     @classmethod
     def INPUT_TYPES(cls):
         embeddings = ["None"] + folder_paths.get_filename_list("embeddings")
         inputs = {
             "required": {
-                "positive_embeddings_count": ("INT", {"default": 0, "min": 0, "max": cls.MAX_EMB_COUNT, "step": 1}),
-                "negative_embeddings_count": ("INT", {"default": 3, "min": 0, "max": cls.MAX_EMB_COUNT, "step": 1}),
+                "positive_embeddings_count": ("INT", {"default": 0, "min": 0, "max": cls.MAX_EMBEDDING_COUNT, "step": 1}),
+                "negative_embeddings_count": ("INT", {"default": 3, "min": 0, "max": cls.MAX_EMBEDDING_COUNT, "step": 1}),
             }
         }
         
         inputs["required"][f"positive_embedding_{1}"] = (embeddings,)
         populate_items(inputs["required"][f"positive_embedding_{1}"][0], "embeddings")
         embedding_name_array = inputs["required"][f"positive_embedding_{1}"]
-        for i in range(1, cls.MAX_EMB_COUNT):
+        for i in range(1, cls.MAX_EMBEDDING_COUNT):
             inputs["required"][f"positive_embedding_{i}"] = embedding_name_array
             inputs["required"][f"positive_emphasis_{i}"] = ("FLOAT", {"default": 1.0, "min": 0.0, "max": 3.0, "step": 0.05})
-        for i in range(1, cls.MAX_EMB_COUNT):
+        for i in range(1, cls.MAX_EMBEDDING_COUNT):
             inputs["required"][f"negative_embedding_{i}"] = embedding_name_array
             inputs["required"][f"negative_emphasis_{i}"] = ("FLOAT", {"default": 1.0, "min": 0.0, "max": 3.0, "step": 0.05})
         #print(f"\033[36mlora stacker{i}////:{names}\033[0m") 
@@ -4821,7 +4816,7 @@ class Embedding_Stacker_ED:
     CATEGORY = "Efficiency Nodes/Stackers"
 
     def embedding_stacker(self, positive_embeddings_count, negative_embeddings_count, lora_stack=None, **kwargs):
-        for i in range(1, self.MAX_EMB_COUNT):
+        for i in range(1, Embedding_Stacker_ED.MAX_EMBEDDING_COUNT):
             kwargs[f"positive_embedding_{i}"] = kwargs[f"positive_embedding_{i}"]["content"]
             kwargs[f"negative_embedding_{i}"] = kwargs[f"negative_embedding_{i}"]["content"]
         # Extract values from kwargs
@@ -4954,8 +4949,8 @@ class TSC_KSampler_ED(TSC_KSampler):
                      "script": ("SCRIPT",),},
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},}
 
-    RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
-    RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE")
+    RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE",)
+    RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE",)
     OUTPUT_NODE = True
     FUNCTION = "sample_ed"
     CATEGORY = "Efficiency Nodes/Sampling"
@@ -4979,7 +4974,7 @@ class TSC_KSampler_ED(TSC_KSampler):
             negative = t_negative            
         if image_opt is not None:
             optional_image = image_opt
-            print(f"KSampler ED: Using priority image instead of context image.")
+            print(f"KSampler ED: Using image_opt instead of context image.")
         if model is None:
             raise Exception("KSampler (Efficient) ED: Model is None. \n\n\n\n\n\n")
             
@@ -4987,14 +4982,14 @@ class TSC_KSampler_ED(TSC_KSampler):
             if optional_image is not None:
                 latent_image = vae_encode_image(vae, optional_image, vae_decode)
             else:
-                raise Exception("KSampler (Efficient) ED: image_source_to_use mode requires an image.\n\n\n\n\n\n")
+                raise Exception("KSampler (Efficient) ED: image_source_to_use 'Image' mode requires an image.\n\n\n\n\n\n")
         else:
             if latent_image is None:
-                raise Exception("KSampler (Efficient) ED: latent_source_to_use mode requires an latent image.\n\n\n\n\n\n")        
+                raise Exception("KSampler (Efficient) ED: image_source_to_use 'Latent' mode requires an latent.\n\n\n\n\n\n")        
         
         if set_seed_cfg_sampler == "from context":
             if c_seed is None:
-                raise Exception("KSampler (Efficient) ED: No seed, cfg, sampler name in the context.\n\n\n\n\n\n")
+                raise Exception("KSampler (Efficient) ED: No seed, cfg, sampler, scheduler in the context.\n\n\n\n\n\n")
             else:
                 seed = c_seed
                 if sampler_type == "sdxl":
@@ -5021,17 +5016,17 @@ class TSC_KSampler_ED(TSC_KSampler):
                 controlnet_conditioning = TSC_Apply_ControlNet_Stack().apply_cnet_stack(positive, negative, cnet_stack)
                 positive, negative = controlnet_conditioning[0], controlnet_conditioning[1]                
                 
-        returndict = super().sample(model, seed, steps, cfg, sampler_name, scheduler, 
+        return_dict = super().sample(model, seed, steps, cfg, sampler_name, scheduler, 
                positive, negative, latent_image, preview_method, vae_decode, denoise=denoise, prompt=prompt, 
                extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id,
                optional_vae=vae, script=script, add_noise=add_noise, start_at_step=start_at_step, end_at_step=end_at_step,
                return_with_leftover_noise=return_with_leftover_noise, sampler_type=sampler_type)
         
-        original_model, _, _, latent_list, _, output_images = returndict["result"]
+        original_model, _, _, latent_list, _, output_images = return_dict["result"]
         
         context = new_context_ed(context, model=original_model,  latent=latent_list, images=output_images,) #RE
-        result = (context, output_images, optional_image)
-        return {"ui": returndict["ui"], "result": result}
+        result = (context, output_images, optional_image,)
+        return {"ui": return_dict["ui"], "result": result}
 
 #=======================================================================================================================
 # TSC KSampler SDXL ED (Efficient)
@@ -5103,8 +5098,8 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},
                 }
 
-    RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
-    RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE")
+    RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE",)
+    RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE",)
     OUTPUT_NODE = True
     FUNCTION = "backgroundmake_ed"
     CATEGORY = "Efficiency Nodes/Sampling"
@@ -5114,7 +5109,7 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
                image_opt=None, script=None, add_noise=None, start_at_step=None, end_at_step=None,
                return_with_leftover_noise=None, sampler_type="regular"):
         
-        def latent_width_height(samples):
+        def get_latent_size(samples):
             size_dict = {}
             i = 0
             for tensor in samples['samples'][0]:
@@ -5131,14 +5126,14 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
         if image_source_to_use == "Image":
             if optional_image is not None:
                 _, image_height, image_width, _ = optional_image.shape
-                print(f"KSamplerTEXT ED: size get from image (width x height : {image_width} x {image_height})")
+                print(f"KSamplerTEXT ED: size get from image (width {image_width} x height {image_height})")
             else:
-                raise Exception("KSamplerTEXT ED: Image source to use mode requires an image.\n\n\n\n\n\n")
+                raise Exception("KSamplerTEXT ED: image_source_to_use 'Image' mode requires an image.\n\n\n\n\n\n")
         elif optional_latent is not None:
-            image_width, image_height  = latent_width_height(optional_latent)
-            print(f"KSamplerTEXT ED: size get from letent (width x height : {image_width} x {image_height})")
+            image_width, image_height  = get_latent_size(optional_latent)
+            print(f"KSamplerTEXT ED: size get from latent (width {image_width} x height {image_height})")
         else:
-            raise Exception("KSamplerTEXT ED: Latent source to use mode requires a latent.\n\n\n\n\n\n")
+            raise Exception("KSamplerTEXT ED: image_source_to_use 'Latent' mode requires a latent.\n\n\n\n\n\n")
         
         batch_size = 1
         latent_t = torch.zeros([batch_size, 4, image_height // 8, image_width // 8]).cpu()
@@ -5224,6 +5219,7 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
         sys.path.append(impact_path)
         sys.path.append(subpack_path)
         sys.path.append(modules_path)
+        
         import impact.impact_pack as impact_pack
         import impact.subcore as subcore
         
@@ -5290,54 +5286,55 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
                             "sam_mask_hint_threshold": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01}),
                             "sam_mask_hint_use_negative": (["False", "Small", "Outter"],),
                             "drop_size": ("INT", {"min": 1, "max": MAX_RESOLUTION, "step": 1, "default": 10}),                     
-                            "wildcard": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                             "cycle": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
                             },
                         "optional": {
                             "image_opt": ("IMAGE",),
                             "detailer_hook": ("DETAILER_HOOK",),
-                            "positive_text_opt": ("STRING", {"forceInput": True}),
-                            "negative_text_opt": ("STRING", {"forceInput": True}),
+                            # "positive_text_opt": ("STRING", {"forceInput": True}),
+                            # "negative_text_opt": ("STRING", {"forceInput": True}),
+                            "wildcard": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                             "inpaint_model": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
                             "noise_mask_feather": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1}),
                         },
                         "hidden": {"my_unique_id": "UNIQUE_ID",},}
 
-            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "MASK", "IMAGE")
-            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE", "CROPPED_REFINED", "CROPPED_ENHANCED_ALPHA", "MASK", "CNET_IMAGES")
-            OUTPUT_IS_LIST = (False, False, False, True, True, False, True)    
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "MASK", "IMAGE",)
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE", "CROPPED_REFINED", "CROPPED_ENHANCED_ALPHA", "MASK", "CNET_IMAGES",)
+            OUTPUT_IS_LIST = (False, False, False, True, True, False, True,)    
             FUNCTION = "doit_ed"
-            CATEGORY = "ImpactPack/Simple"  
+            CATEGORY = "ImpactPack/Simple"
 
             def doit_ed(self, context, set_seed_cfg_sampler, bbox_detector, segm_detector_opt, sam_model_opt, sam_mode, 
                     guide_size, guide_size_for, 
                     max_size, seed, steps, cfg, sampler_name, scheduler, denoise, feather, noise_mask, force_inpaint,
                     bbox_threshold, bbox_dilation, bbox_crop_factor,
                     sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
-                    sam_mask_hint_use_negative, drop_size, wildcard, image_opt=None, cycle=1,
-                    detailer_hook=None, positive_text_opt=None, negative_text_opt=None, inpaint_model=False, noise_mask_feather=0, my_unique_id=None):
+                    sam_mask_hint_use_negative, drop_size, wildcard="", image_opt=None, cycle=1,
+                    detailer_hook=None, inpaint_model=False, noise_mask_feather=0, my_unique_id=None):
         
                 _, model, clip, vae, positive, negative, image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative",  "images", "seed", "cfg", "sampler", "scheduler"])
         
                 if image_opt is not None:       
                     image = image_opt
-                if positive_text_opt and positive_text_opt != "":
-                    positive = None
-                    tokens = clip.tokenize(positive_text_opt)
-                    cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
-                    positive = [[cond, {"pooled_output": pooled}]]
-                    print(f"\033[32mFaceDetailer ED: use positive text to positive conditioning\033[0m")
+                    print(f"FaceDetailer ED: Using image_opt instead of context image.")
+                # if positive_text_opt and positive_text_opt != "":
+                    # positive = None
+                    # tokens = clip.tokenize(positive_text_opt)
+                    # cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+                    # positive = [[cond, {"pooled_output": pooled}]]
+                    # print(f"\033[32mFaceDetailer ED: use positive text to positive conditioning\033[0m")
 
-                if negative_text_opt and negative_text_opt != "":
-                    negative = None
-                    tokens = clip.tokenize(negative_text_opt)
-                    cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
-                    negative = [[cond, {"pooled_output": pooled}]]
-                    print(f"\033[32mFaceDetailer ED: use negative text to negative conditioning\033[0m")
+                # if negative_text_opt and negative_text_opt != "":
+                    # negative = None
+                    # tokens = clip.tokenize(negative_text_opt)
+                    # cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+                    # negative = [[cond, {"pooled_output": pooled}]]
+                    # print(f"\033[32mFaceDetailer ED: use negative text to negative conditioning\033[0m")
         
                 if set_seed_cfg_sampler == "from context":
                     if c_seed is None:
-                        raise Exception("FaceDetailer ED: No seed, cfg, sampler name in the context.\n\n\n\n\n\n")
+                        raise Exception("FaceDetailer ED: No seed, cfg, sampler, scheduler in the context.\n\n\n\n\n\n")
                     else:
                         seed = c_seed
                         PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
@@ -5363,7 +5360,7 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
                     inpaint_model=inpaint_model, noise_mask_feather=noise_mask_feather)
 
                 context = new_context_ed(context, images=result_img) #RE 
-                return (context, result_img, image, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, result_cnet_images)
+                return (context, result_img, image, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, result_cnet_images,)
             
         NODE_CLASS_MAPPINGS.update({"FaceDetailer 💬ED": FaceDetailer_ED})
         sys.path.remove(impact_path)
@@ -5390,7 +5387,7 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
         sys.path.insert(0, ultimate_sd_path)
         if 'utils' in sys.modules:
             sys.modules.pop('utils', None)
-
+            
         import ComfyUI_UltimateSDUpscale.nodes as ultimate_sd
         import comfy_extras.nodes_upscale_model as nodes_upscale_model        
 
@@ -5437,8 +5434,8 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
                     "optional": {"image_opt": ("IMAGE",),},
                     "hidden": {"my_unique_id": "UNIQUE_ID",},}
 
-            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE")
-            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE")
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE",)
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE",)
             FUNCTION = "upscale_ed"
             CATEGORY = "image/upscaling"
 
@@ -5450,11 +5447,12 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
         
                 _, model, clip, vae, positive, negative, image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative",  "images", "seed", "cfg", "sampler", "scheduler"])
                 
-                if image_opt != None:
+                if image_opt is not None:
                     image = image_opt
+                    print(f"UltimateSDUpscale ED: Using image_opt instead of context image.")
                 if set_seed_cfg_sampler == "from context":
-                    if c_seed == None:
-                        raise Exception("KSampler (Efficient) ED: No seed, cfg, sampler name in the context.\n\n\n\n\n\n")
+                    if c_seed is None:
+                        raise Exception("UltimateSDUpscale ED: No seed, cfg, sampler, scheduler in the context.\n\n\n\n\n\n")
                     else:
                         seed = c_seed
                         PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
@@ -5467,11 +5465,11 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
                 elif set_seed_cfg_sampler =="from node to ctx":
                     context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)
             
-                if set_tile_size_from_image_size == True:
+                if set_tile_size_from_image_size:
                     _, tile_height, tile_width, _ = image.shape
                     PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_width", "type": "text", "data": tile_width})
                     PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_height", "type": "text", "data": tile_height})
-
+                
                 upscaler = load_upscale_model(upscale_model)        
                         
                 (tensor,) = super().upscale(image, model, positive, negative, vae, upscale_by, seed,
@@ -5481,7 +5479,7 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
                         seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode)
                 
                 context = new_context_ed(context, images=tensor) #RE        
-                return (context, tensor, image)
+                return (context, tensor, image,)
 
         NODE_CLASS_MAPPINGS.update({"Ultimate SD Upscale 💬ED": UltimateSDUpscaleED})
         sys.path.remove(ultimate_sd_path)
