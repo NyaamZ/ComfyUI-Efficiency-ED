@@ -167,8 +167,8 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   - Impact pack의 FaceDetailer 애드온. Impact pack이 설치되지 않았다면 보이지 않는다.<p></p>
   - context를 입력받을 수 있게 수정한 버전.<p></p>
   - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있으며, 각종 모델 로더를 통합한 노드.<p></p>
-  <li>아래처럼 positive_text_opt나 negative_text_opt에 프롬프트 텍스트를 입력할 수 있다.<br>
-    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/447f8c44-75a5-4714-8b79-ad3977f58cae" width="400"><br>
+  <li>아래처럼 wildcard에 프롬프트 텍스트를 입력할 수 있다.<br>
+    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/9a8533a3-c1aa-4aac-b33a-f9c24636a790" width="400"><br>
     <i>(FaceDetailer 💬ED에서 눈을 더 반짝이게 하고 싶다던가 표정을 바꾸고 싶을 때 유용하다.</i><br>
     <i>프롬프트 텍스트를 입력하면 context의 프롬프트는 무시하고 입력된 프롬프트를 우선 사용한다.)</i><br>
   </li>
