@@ -5,7 +5,7 @@
 =======
 ### 워크플로 (EXIF 있음):
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/a2cb4278-4294-4a16-9c07-14ae9081f1f0" width="800" style="display: inline-block;">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/8944c123-82ab-43b4-aa6d-30fcbdf60d1a" width="800" style="display: inline-block;">
 </p>
 원본과 다르게 💬ED노드는 Context 링크를 주고 받는다.<br>
 
