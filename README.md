@@ -16,7 +16,7 @@
 context를 사용해 어지럽게 널린 링크들을 위의 그림 처럼 단 한개로 정리했다!<br><br>
 context는 model, clip, vae, positve 컨디셔닝, negative 컨디셔닝, 등등이 합쳐져 있는 코드 다발로 생각하면 된다.<br>
 (rgthree의 커스텀 노드에서 차용)<br>
-Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 노드 설치를 권장한다. 당연하지만 rgthree의 context와 호환된다.<br><br>
+Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적으로 작동하지만 rgthree의 커스텀 노드 설치를 권장한다. 당연하지만 rgthree의 context와 호환된다.<br><br>
 <details>
   <summary><b>context 간단 사용법</b></summary>
 <ul>
