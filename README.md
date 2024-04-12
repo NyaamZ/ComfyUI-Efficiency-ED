@@ -187,11 +187,11 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 <p></p>
 
 ### 요구사항:
-<li>Efficiency Nodes 💬ED는 <a href="https://github.com/pythongosssss/ComfyUI-Custom-Scripts">ComfyUI-Custom-Scripts</a>가 필요함.</li></li>
+<li>Efficiency Nodes 💬ED는 <a href="https://github.com/pythongosssss/ComfyUI-Custom-Scripts">ComfyUI-Custom-Scripts</a>가 필요함. <b>(필수)</b></li></li>
 <p></p>
-<li>FaceDetailer 💬ED 와 Ultimate SD Upscale 💬ED 사용을 위해서는 각각 <a href="https://github.com/ltdrdata/ComfyUI-Impact-Pack">Impact Pack</a>과 <a href="https://github.com/ssitu/ComfyUI_UltimateSDUpscale">Ultimate SD Upscale</a>이 필요함.</li>
+<li>FaceDetailer 💬ED 와 Ultimate SD Upscale 💬ED 사용을 위해서는 각각 <a href="https://github.com/ltdrdata/ComfyUI-Impact-Pack">Impact Pack</a>과 <a href="https://github.com/ssitu/ComfyUI_UltimateSDUpscale">Ultimate SD Upscale</a>이 필요함. <b>(권장)</b></li>
 <p></p>
-<li>context 입력, 출력 등을 위해 <a href="https://github.com/rgthree/rgthree-comfy">rgthree's custom nodes</a> 설치를 권장.</li>
+<li>context 입력, 출력 등을 위해 <a href="https://github.com/rgthree/rgthree-comfy">rgthree's custom nodes</a> 설치를 권장. <b>(권장)</b></li>
 <p></p>
 
 ## **설치:**
