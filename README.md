@@ -57,7 +57,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
     <p></p>
     <li>Tiled VAE 인코딩<br>
         <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/b160f24f-09f6-460f-a1a4-e906077ff61b" width="300" style="display: inline-block;"><br>
-          - 오른 클릭 > Property Panel에서 Use tiled VAE encode를 true로 하면 VAE 인코딩시에 Tiled VAE 인코딩을 사용할 수 있다.<br>
+          - 오른 클릭 > Property Panel에서 Use tiled VAE encode를 true로 하면 VAE 인코딩시에 Tiled VAE 인코딩을 사용한다.<br>
           - Tiled VAE 인코딩은 큰 이미지를 VRAM이 부족해도 인코딩할 수 있다. 대신 기본보다 느리다.<br>
     </li>
     <p></p>
@@ -80,10 +80,10 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/37ca01cb-0b8e-4e14-9d86-7dcf09c3a481" width="500">
 </p>
     <p></p>
-    <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler를 가져오기 또는 내보내기가 가능함<br>
+    <li>set_seed_cfg_sampler 설정으로 context에서 seed, cfg, sampler, scheduler 설정을 가져오기 또는 내보내기가 가능<br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/57694db3-b520-47ef-b401-8fcbfd1eb63b" width="250" style="display: inline-block;"><br>
       - from node to ctx는 현재 노드의 seed, cfg, sampler, scheduler 설정을 context에 내보내기<br>
-      - from context는 context에서 seed, cfg, sampler, scheduler를 가져오기<br>
+      - from context는 context에서 seed, cfg, sampler, scheduler 설정을 가져오기<br>
       - from node only는 현재 노드의 seed, cfg, sampler, scheduler 설정을 이용하고 context에 저장하지는 않는다.<br>
     </li>
     <p></p>
@@ -153,7 +153,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/4ebd0668-f182-40a0-a882-35fb485ede5c" width="400">
   </p>
-  - 컨트롤넷 스크립트. 샘플러와 연결하여 컨트롤넷을 사용하는 모드.<br>
+  - 컨트롤넷 스크립트. 샘플러와 연결하여 컨트롤넷을 사용하는 노드.<br>
   <i>(KSampler (Efficient) 💬ED 또는 KSampler TEXT (Eff.) 💬ED에서만 동작한다.)</i><br>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
@@ -162,7 +162,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <summary><b>FaceDetailer 💬ED</b></summary>
   <p></p>
   <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0e389054-ad3e-4f02-ba2b-c1ac38af47ce" width="250">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/3c79367f-e2f7-4f3c-bffe-48be9a6627c9" width="250">
   </p>
   - Impact pack의 FaceDetailer 애드온. Impact pack이 설치되지 않았다면 보이지 않는다.<p></p>
   - context를 입력받을 수 있게 수정한 버전.<p></p>
