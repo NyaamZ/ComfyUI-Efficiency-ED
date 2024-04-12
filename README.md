@@ -185,7 +185,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있으며, upscale 모델 로더를 통합한 노드.
   <p></p>
 </details>
-
+<br<br>
 
 ### 요구사항:
 <li>Efficiency Nodes 💬ED는 <a href="https://github.com/pythongosssss/ComfyUI-Custom-Scripts">ComfyUI-Custom-Scripts</a>가 필요함.</li></li>
