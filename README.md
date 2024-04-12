@@ -183,9 +183,8 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   - Ultimate SD Upscale의 애드온. Ultimate SD Upscale이 설치되지 않았다면 보이지 않는다.<p></p>
   - context를 입력받을 수 있게 수정한 버전.<p></p>
   - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있으며, upscale 모델 로더를 통합한 노드.
-  <p></p>
 </details>
-<br<br>
+<p></p>
 
 ### 요구사항:
 <li>Efficiency Nodes 💬ED는 <a href="https://github.com/pythongosssss/ComfyUI-Custom-Scripts">ComfyUI-Custom-Scripts</a>가 필요함.</li></li>
@@ -193,7 +192,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 <li>FaceDetailer 💬ED 와 Ultimate SD Upscale 💬ED 사용을 위해서는 각각 <a href="https://github.com/ltdrdata/ComfyUI-Impact-Pack">Impact Pack</a>과 <a href="https://github.com/ssitu/ComfyUI_UltimateSDUpscale">Ultimate SD Upscale</a>이 필요함.</li>
 <p></p>
 <li>context 입력, 출력 등을 위해 <a href="https://github.com/rgthree/rgthree-comfy">rgthree's custom nodes</a> 설치를 권장.</li>
-<br><br>
+<p></p>
 
 ## **설치:**
 매니저 -> Install via git URL -> https://github.com/NyaamZ/efficiency-nodes-comfyui 입력<br><br>
