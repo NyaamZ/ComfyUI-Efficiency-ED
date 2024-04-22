@@ -4211,7 +4211,6 @@ class TSC_LoRA_Stack2String:
 #################################################################
 
 import nodes
-import folder_paths
 from server import PromptServer
 
 ############## ED rgthree Context
