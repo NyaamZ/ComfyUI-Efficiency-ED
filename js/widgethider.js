@@ -3,7 +3,7 @@ import { app } from "../../scripts/app.js";
 let origProps = {};
 let initialized = false;
 
-const findWidgetByName = (node, name) => {
+export const findWidgetByName = (node, name) => {
     return node.widgets ? node.widgets.find((w) => w.name === name) : null;
 };
 
@@ -13,7 +13,7 @@ const doesInputWithNameExist = (node, name) => {
 
 const HIDDEN_TAG = "tschide";
 // Toggle Widget + change size
-function toggleWidget(node, widget, show = false, suffix = "") {
+export function toggleWidget(node, widget, show = false, suffix = "") {
     if (!widget || doesInputWithNameExist(node, widget.name)) return;
 
     // Store the original properties of the widget if not already stored
@@ -58,57 +58,49 @@ function toggleWidget_2(node, widget, show = false, suffix = "") {
 
 /////////////////////////////////////////////////////////////////////////// ED
 let store_previous_noise = 0;
-function change_TXT2IMG_denoise(node, change = true, suffix = "") {
-	//console.log("ED_log TXT2IMG >>" + change);
-	const linkk = node.outputs[0].links
+
+function find_neighbor_node(node, nodetype){
+	const linkk = node.outputs[0].links;
 	if (linkk) {
 		for (const l of linkk) {
 			const linkInfo = app.graph.links[l];
 			const n = node.graph.getNodeById(linkInfo.target_id);
 			//console.log("ED_log node type:" + n.type);	
-			if (n.type.indexOf('KSampler') != -1) {
-				let w = findWidgetByName(n, 'denoise');
-				if (change){
-					if (w.value != 1.0) { 
-						store_previous_noise = w.value;
-						w.value = 1.0;
-					}
-				}else{
-					if (w.value == 1.0 && store_previous_noise != 0) { 
-						w.value = store_previous_noise;
-					}
-				}
-				return
+			if (n.type.indexOf(nodetype) != -1) {
+				return n;
 			}
-			else if(n.type.indexOf('Context') != -1) {
-				const linkctx = n.outputs[0].links
+			else if(n.type.indexOf('Context') != -1 || n.type == "Apply LoRA Stack 💬ED") {
+				const linkctx = n.outputs[0].links;
 				if (linkctx) {
 					for (const l of linkctx) {
 						const linkInfo_ctx = app.graph.links[l];
 						const n_ctx = n.graph.getNodeById(linkInfo_ctx.target_id);
 						//console.log("ED_log node type:" + n.type);	
-						if (n_ctx.type.indexOf('KSampler') != -1) {
-							let w = findWidgetByName(n_ctx, 'denoise');
-							if (change){
-								if (w.value != 1.0) { 
-									store_previous_noise = w.value;
-									w.value = 1.0;
-								}
-							}else{
-								if (w.value == 1.0 && store_previous_noise != 0) { 
-									w.value = store_previous_noise;
-								}
-							}
-							return
+						if (n_ctx.type.indexOf(nodetype) != -1) {
+							return n_ctx;
 						}
 					}
 				}
 			}
 		}		
 	}
+	return null;
 }
-	
 
+
+function change_TXT2IMG_denoise(node, change = true, suffix = "") {
+	let w = findWidgetByName(node, 'denoise');
+	if (change){
+		if (w.value != 1.0) { 
+			store_previous_noise = w.value;
+			w.value = 1.0;
+		}
+	}else{
+		if (w.value == 1.0 && store_previous_noise != 0) { 
+			w.value = store_previous_noise;
+		}
+	}
+}
 
 // New function to handle widget visibility based on input_mode
 function handleInputModeWidgetsVisibility(node, inputModeValue) {
@@ -287,8 +279,8 @@ let last_ckpt_input_mode;
 let last_target_ckpt;
 function xyCkptRefinerOptionsRemove(widget, node) {
 
-    let target_ckpt = findWidgetByName(node, "target_ckpt").value
-    let input_mode = widget.value
+    let target_ckpt = findWidgetByName(node, "target_ckpt").value;
+    let input_mode = widget.value;
 
     if ((input_mode === "Ckpt Names+ClipSkip+VAE") && (target_ckpt === "Refiner")) {
         if (last_ckpt_input_mode === "Ckpt Names+ClipSkip") {
@@ -307,7 +299,7 @@ function xyCkptRefinerOptionsRemove(widget, node) {
     } else if (input_mode !== "Ckpt Names+ClipSkip+VAE"){
         last_ckpt_input_mode = input_mode;
     }
-    last_target_ckpt = target_ckpt
+    last_target_ckpt = target_ckpt;
 }
 
 // Create a map of node titles to their respective widget handlers
@@ -335,13 +327,19 @@ const nodeWidgetHandlers = {
 	"FaceDetailer 💬ED": {
         'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED
     },
+	"MaskDetailer 💬ED": {
+        'set_seed_cfg_sampler_batch': handleEfficientSamplerSetSeed_ED
+    },
+	"Detailer (SEGS) 💬ED": {
+        'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED
+    },
     "Embedding Stacker 💬ED": {
         'positive_embeddings_count': handleEmbeddingStacker,
 		'negative_embeddings_count': handleEmbeddingStacker
     },
 	"Ultimate SD Upscale 💬ED": {
         'set_seed_cfg_sampler': handleEfficientSamplerSetSeed_ED,
-		'set_tile_size_from_image_size': handleUltimateSDUpscalerTileSize_ED
+		'set_tile_size_from': handleUltimateSDUpscalerTileSize_ED
     },
     "Eff. Loader SDXL": {
         'refiner_ckpt_name': handleEffLoaderSDXLRefinerCkptName
@@ -427,56 +425,45 @@ function handleEfficientLoaderLoraName_ED(node, widget) {
 }
 
 function handleEfficientLoaderPaintMode_ED(node, widget) {
-    if (widget.value == '✍️ Txt2Img') {
-		change_TXT2IMG_denoise(node, true);
-    } else {
-        change_TXT2IMG_denoise(node, false);
-    }
-}
+	const n_node = find_neighbor_node(node, 'KSampler')	
+	if (n_node == null)
+		return;
+	const is_ed_sampler = (n_node.type == "KSampler (Efficient) 💬ED")
 
+    if (widget.value == '✍️ Txt2Img') {
+		change_TXT2IMG_denoise(n_node, true);
+		if (is_ed_sampler && (typeof n_node.toggleWidgetByProperty === 'function')) 
+			n_node.toggleWidgetByProperty(false);
+    } else if(widget.value == '🎨 Inpaint(MaskDetailer)') {		
+        change_TXT2IMG_denoise(n_node, false);
+		if (is_ed_sampler && (typeof n_node.toggleWidgetByProperty === 'function')) 
+			n_node.toggleWidgetByProperty(true);
+    }
+	else{
+		change_TXT2IMG_denoise(n_node, false);
+		if (is_ed_sampler && (typeof n_node.toggleWidgetByProperty === 'function')) 
+			n_node.toggleWidgetByProperty(false);
+	}
+	
+}
 
 function handleEfficientSamplerSetSeed_ED(node, widget) {
-    if (widget.value === "from context") {
-		const adjustment  = node.size[1];
-        toggleWidget(node, findWidgetByName(node, 'seed'));
-        toggleWidget(node, findWidgetByName(node, 'cfg'));
-		toggleWidget(node, findWidgetByName(node, 'sampler_name'));
-		toggleWidget(node, findWidgetByName(node, 'scheduler'));
+	const adjustment  = node.size[1];
+	const opened = !(widget.value === "from context");
+    
+    toggleWidget(node, findWidgetByName(node, 'seed'), opened);
+	toggleWidget(node, findWidgetByName(node, 'control_after_generate'), opened);
+    toggleWidget(node, findWidgetByName(node, 'cfg'), opened);
+	toggleWidget(node, findWidgetByName(node, 'sampler_name'), opened);
+	toggleWidget(node, findWidgetByName(node, 'scheduler'), opened);
+	toggleWidget(node, findWidgetByName(node, 'batch_size'), opened);
+	if (node.size[1] < adjustment){
 		node.setSize([node.size[0], adjustment]);
-    } else {
-		const adjustment  = node.size[1];
-        toggleWidget(node, findWidgetByName(node, 'seed'), true);
-        toggleWidget(node, findWidgetByName(node, 'cfg'), true);
-        toggleWidget(node, findWidgetByName(node, 'sampler_name'), true);
-        toggleWidget(node, findWidgetByName(node, 'scheduler'), true);
-		if (node.size[1] < adjustment){
-			node.setSize([node.size[0], adjustment]);
-		}
-    }
+	}
 }
 
-/* function handleEfficientSamplerSetNoiseSeed_ED(node, widget) {
-    if (widget.value === "from context") {       
-		const adjustment  = node.size[1];
-        toggleWidget(node, findWidgetByName(node, 'noise_seed'));
-        toggleWidget(node, findWidgetByName(node, 'cfg'));
-		toggleWidget(node, findWidgetByName(node, 'sampler_name'));
-		toggleWidget(node, findWidgetByName(node, 'scheduler'));
-		node.setSize([node.size[0], adjustment]);
-    } else {
-		const adjustment  = node.size[1];
-        toggleWidget(node, findWidgetByName(node, 'noise_seed'), true);
-        toggleWidget(node, findWidgetByName(node, 'cfg'), true);
-        toggleWidget(node, findWidgetByName(node, 'sampler_name'), true);
-        toggleWidget(node, findWidgetByName(node, 'scheduler'), true);
-		if (node.size[1] < adjustment){
-			node.setSize([node.size[0], adjustment]);
-		}
-    }
-} */
-
 function handleUltimateSDUpscalerTileSize_ED(node, widget) {
-    if (widget.value == true) {       
+    if (widget.value == 'Image size' || widget.value == 'Canvas size') {       
 		const adjustment  = node.size[1];
         toggleWidget(node, findWidgetByName(node, 'tile_width'));
         toggleWidget(node, findWidgetByName(node, 'tile_height'));

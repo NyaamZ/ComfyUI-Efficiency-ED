@@ -8,6 +8,8 @@ const COLOR_THEMES = {
     cyan: { nodeColor: "#223333", nodeBgColor: "#335555" },
     purple: { nodeColor: "#332233", nodeBgColor: "#553355" },
     yellow: { nodeColor: "#443322", nodeBgColor: "#665533" },
+	yellow_ocher: { nodeColor: "#8c6446", nodeBgColor: "#785032" },
+	sky_blue: { nodeColor: "#466d6e", nodeBgColor: "#325a5a" },
     none: { nodeColor: null, nodeBgColor: null } // no color
 };
 
@@ -18,9 +20,16 @@ const NODE_COLORS = {
 	// "KSampler SDXL (Eff.) 💬ED": "random",
 	"KSampler TEXT (Eff.) 💬ED": "random",
 	"Load Image 💬ED": "blue",
+	"Save Image 💬ED": "red",
 	"Control Net Script 💬ED": "green",
 	"Embedding Stacker 💬ED": "blue",
-
+	"Apply LoRA Stack 💬ED": "blue",
+	
+	"FaceDetailer 💬ED": "yellow_ocher",
+	"MaskDetailer 💬ED": "sky_blue",
+	"Detailer (SEGS) 💬ED": "sky_blue",
+	"Ultimate SD Upscale 💬ED": "yellow_ocher",
+	
     "KSampler (Efficient)": "random",
     "KSampler Adv. (Efficient)": "random",
     "KSampler SDXL (Eff.)": "random",

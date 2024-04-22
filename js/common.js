@@ -9,7 +9,10 @@ function nodeFeedbackHandlerEd(event) {
 	}
 	
 	if(node) {
-		if(event.detail.type == "text") {			
+		if((event.detail.type == "sound") && (typeof node.playSound === 'function')) {
+			node.playSound();
+		}
+		else if(event.detail.type == "text") {			
 			if (node.type == "MultiAreaConditioning") {
 				for (const w of node.widgets) {
 					if (event.detail.widget_name == w.name){
@@ -30,7 +33,7 @@ function nodeFeedbackHandlerEd(event) {
 			else {
 				for (const w of node.widgets) {
 					if (event.detail.widget_name == w.name){					
-						w.value = event.detail.data
+						w.value = event.detail.data;
 						//const styles = {textAlign: "center", fontSize: "0.75rem"};						
 						//Object.assign(w.inputEl.style, styles);
 						break;

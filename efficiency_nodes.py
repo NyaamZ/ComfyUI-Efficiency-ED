@@ -4211,21 +4211,21 @@ class TSC_LoRA_Stack2String:
 #################################################################
 
 import nodes
+import folder_paths
 from server import PromptServer
-from PIL import Image, ImageOps, ImageSequence
 
 ############## ED rgthree Context
 _all_ed_context_input_output_data = {
   "base_ctx": ("base_ctx", "RGTHREE_CONTEXT", "CONTEXT"),
   "model": ("model", "MODEL", "MODEL"),
-  "refiner_model": ("refiner_model", "MODEL", "REFINER_MODEL"),
+  #"refiner_model": ("refiner_model", "MODEL", "REFINER_MODEL"),
   "clip": ("clip", "CLIP", "CLIP"),
-  "refiner_clip": ("refiner_clip", "CLIP", "REFINER_CLIP"),
+  #"refiner_clip": ("refiner_clip", "CLIP", "REFINER_CLIP"),
   "vae": ("vae", "VAE", "VAE"),
   "positive": ("positive", "CONDITIONING", "POSITIVE"),
-  "refiner_positive": ("positive", "CONDITIONING", "REFINER_POSITIVE"),
+  #"refiner_positive": ("positive", "CONDITIONING", "REFINER_POSITIVE"),
   "negative": ("negative", "CONDITIONING", "NEGATIVE"),
-  "refiner_negative": ("negative", "CONDITIONING", "REFINER_NEGATIVE"),
+  #"refiner_negative": ("negative", "CONDITIONING", "REFINER_NEGATIVE"),
   "latent": ("latent", "LATENT", "LATENT"),
   "images": ("images", "IMAGE", "IMAGE"),
   "seed": ("seed", "INT", "SEED"),
@@ -4243,6 +4243,7 @@ _all_ed_context_input_output_data = {
   "text_neg_l": ("text_neg_l", "STRING", "TEXT_NEG_L"),
   "mask": ("mask", "MASK", "MASK"),
   "control_net": ("control_net", "CONTROL_NET", "CONTROL_NET"),
+  "lora_stack": ("lora_stack", "LORA_STACK", "LORA_STACK"),
 }
 
 def new_context_ed(base_ctx, **kwargs):
@@ -4270,7 +4271,8 @@ def context_2_tuple_ed(ctx, inputs_list=None):
 #======= CASHE
 cashe_ed = {
     "control_net": [],
-    "ultra_bbox_segm_detector": [],
+    "ultra_bbox_detector": [],
+    "ultra_segm_detector": [],
     "sam_model": [],
     "ultimate_sd_upscaler": []
 }
@@ -4380,6 +4382,74 @@ class TSC_LoRA_Stacker_ED:
         #print(f"\033[36mloras////:{(loras,)}\033[0m") 
         return (loras,)
 
+# TSC Apply_LoRA
+class TSC_Apply_LoRA_Stack_ED:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {"required": { },
+                    "optional": {
+                                "context": ("RGTHREE_CONTEXT",),
+                                "model": ("MODEL",),
+                                "clip": ("CLIP",),
+                                "vae": ("VAE",),
+                                "positive": ("CONDITIONING",),
+                                "negative": ("CONDITIONING",),
+                                "latent": ("LATENT",),
+                                "images": ("IMAGE",),
+                                "seed": ("INT", {"forceInput": True}),
+                        },
+                    }
+
+    RETURN_TYPES = ("RGTHREE_CONTEXT", "MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "IMAGE", "INT",)
+    RETURN_NAMES = ("CONTEXT", "MODEL", "CLIP", "VAE", "POSITIVE" ,"NEGATIVE", "LATENT", "IMAGE", "SEED",)
+    FUNCTION = "apply_lora_ed"
+    CATEGORY = "Efficiency Nodes/Stackers"
+    
+    def apply_load_lora(lora_params, ckpt, clip):
+        
+        def recursive_load_lora(lora_params, ckpt, clip, folder_paths, lora_count):
+            if len(lora_params) == 0:
+                return ckpt, clip
+
+            lora_name, strength_model, strength_clip = lora_params[0]
+            if os.path.isabs(lora_name):
+                lora_path = lora_name
+            else:
+                lora_path = folder_paths.get_full_path("loras", lora_name)
+            
+            lora_count += 1
+            lora_model_info = f"{os.path.splitext(os.path.basename(lora_name))[0]}({round(strength_model, 2)},{round(strength_clip, 2)})"
+            print(f"  [{lora_count}] lora(mod,clip): {lora_model_info}")
+            lora_model, lora_clip = comfy.sd.load_lora_for_models(ckpt, clip, comfy.utils.load_torch_file(lora_path), strength_model, strength_clip)
+
+            # Call the function again with the new lora_model and lora_clip and the remaining tuples
+            return recursive_load_lora(lora_params[1:], lora_model, lora_clip, folder_paths, lora_count)
+        
+        print(f"\033[36mApply LoRA Stack 💬ED - Lora load(Not use Cashe):\033[0m")
+        print(f"Lora:")
+        lora_count = 0
+        
+        # Unpack lora parameters from the first element of the list for now
+        lora_name, strength_model, strength_clip = lora_params[0]
+        lora_model, lora_clip = recursive_load_lora(lora_params, ckpt, clip, folder_paths, lora_count)
+
+        return lora_model, lora_clip
+
+
+    def apply_lora_ed(self, context=None, **kwargs):
+        ctx = new_context_ed(context, **kwargs)  
+    
+        _, model, clip, vae, positive, negative, latent, images, seed, lora_stack  = context_2_tuple_ed(ctx,["model", "clip", "vae", "positive", "negative", "latent", "images", "seed", "lora_stack"])
+        
+        if lora_stack:
+            lora_params = []
+            lora_params.extend(lora_stack)
+            model, clip = TSC_Apply_LoRA_Stack_ED.apply_load_lora(lora_params, model, clip)
+            lora_stack = None
+            ctx = new_context_ed(context, model=model, clip=clip, lora_stack=lora_stack)
+        
+        return (ctx, model, clip, vae, positive, negative, latent, images, seed,)
+
 ########################################################################################################################
 # TSC Efficient Loader_ED
 class TSC_EfficientLoader_ED():
@@ -4387,7 +4457,8 @@ class TSC_EfficientLoader_ED():
     Paint_Mode = {
         "✍️ Txt2Img": 1,
         "🦱 Img2Img": 2,
-        "🎨 Inpaint": 3,
+        "🎨 Inpaint(Ksampler)": 3,
+        "🎨 Inpaint(MaskDetailer)": 4,
     }
 
     @classmethod
@@ -4441,22 +4512,64 @@ class TSC_EfficientLoader_ED():
 
         # Retrieve cache numbers
         vae_cache, ckpt_cache, lora_cache, refn_cache = get_cache_numbers("Efficient Loader")        
-        lora_name = "None"
+        # lora_name = "None"
         
         # Embedding stacker process
         lora_stack, positive, negative, positive_refiner, negative_refiner = embedding_process(lora_stack, positive, negative, positive_refiner, negative_refiner)
         
-        if lora_name != "None" or lora_stack:
+
+        # def workflow_to_map(workflow):
+            # nodes = {}
+            # links = {}
+            # for link in workflow['links']:
+                # links[link[0]] = link[1:]
+            # for node in workflow['nodes']:
+                # nodes[str(node['id'])] = node
+            # return nodes, links
+
+        # GET PROPERTIES #
+        this_sync = True
+        multi_sync = False
+        tiled_vae_encode = False
+        vae_encode_tile_size = 512
+        use_apply_lora = False
+        
+        if extra_pnginfo and "workflow" in extra_pnginfo:
+            workflow = extra_pnginfo["workflow"]
+            #nodes, links = workflow_to_map(workflow)
+            for node in workflow["nodes"]:
+                if node["id"] == int(my_unique_id):
+                    tiled_vae_encode = node["properties"]["Use tiled VAE encode"]
+                    this_sync = node["properties"]["Synchronize widget with image size"]
+                    #multi_sync = node["properties"]["Image size sync MultiAreaConditioning"]
+                if node["type"] == "Apply LoRA Stack 💬ED" and not use_apply_lora:
+                    if node["properties"]["Turn on Applry Lora"] == True:
+                        print(f"\033[36mEfficient Loader ED:Apply LoRA Stack ED is exist, loading Lora is pending.\033[0m")
+                        use_apply_lora = True
+
+            # for link in nodes[my_unique_id]['outputs'][0]['links']:
+                # link_node_id = links[link][2]
+
+                # for node in workflow["nodes"]:
+                    # node_id = node["id"]
+                    # if node["type"] == "Apply LoRA 💬ED" and node["id"] == link_node_id:
+                        # if node["properties"]["Turn on Applry Lora"] == True:
+                            # print(f"\033[36mEfficient Loader ED:Apply LoRA ED is linked, Lora loading is pending.\033[0m")
+                            # use_apply_lora = True
+                        # break
+        
+        if  lora_stack and not use_apply_lora:
             # Initialize an empty list to store LoRa parameters.
             lora_params = []
 
             # Check if lora_name is not the string "None" and if so, add its parameters.
-            if lora_name != "None":
-                lora_params.append((lora_name, lora_model_strength, lora_clip_strength))
+            # if lora_name != "None":
+                # lora_params.append((lora_name, lora_model_strength, lora_clip_strength))
 
             # If lora_stack is not None or an empty list, extend lora_params with its items.
             if lora_stack:
                 lora_params.extend(lora_stack)
+                lora_stack = None
 
             # Load LoRa(s)
             model, clip = load_lora(lora_params, ckpt_name, my_unique_id, cache=lora_cache, ckpt_cache=ckpt_cache, cache_overwrite=True)
@@ -4466,33 +4579,12 @@ class TSC_EfficientLoader_ED():
         else:
             global loaded_objects
             loaded_objects["lora"] = []
-            #print(f"\033[36mlora stack is none\033[0m")
             model, clip, vae = load_checkpoint(ckpt_name, my_unique_id, cache=ckpt_cache, cache_overwrite=True)
             lora_params = None
             
         # Check for custom VAE
         if vae_name != "Baked VAE":
             vae = load_vae(vae_name, my_unique_id, cache=vae_cache, cache_overwrite=True)
-        
-        this_sync = True
-        multi_sync = False
-        tiled_vae_encode = False
-        vae_encode_tile_size = 512
-        
-        # GET PROPERTIES #
-        if extra_pnginfo and "workflow" in extra_pnginfo:
-            workflow = extra_pnginfo["workflow"]
-            for node in workflow["nodes"]:
-                if node["id"] == int(my_unique_id):
-                    this_sync = node["properties"]["Image size sync this"]
-                    multi_sync = node["properties"]["Image size sync MultiAreaConditioning"]      
-                    tiled_vae_encode = node["properties"]["Use tiled VAE encode"]           
-                    vae_encode_tile_size = round(node["properties"]["Tiled VAE encode tile size"] / 64) * 64
-                    if vae_encode_tile_size < 320:
-                        vae_encode_tile_size = 320
-                    if vae_encode_tile_size > 4096:
-                        vae_encode_tile_size = 4096                    
-                    break
                     
         #✍️ Txt2Img         
         if paint_mode == "✍️ Txt2Img":
@@ -4512,10 +4604,15 @@ class TSC_EfficientLoader_ED():
             _, image_height, image_width, _ = pixels.shape
             
             # 🎨 Inpaint
-            if paint_mode == "🎨 Inpaint":
+            if paint_mode == "🎨 Inpaint(Ksampler)":
                 if  mask is None:
                     raise Exception("Efficient Loader ED: Inpaint mode requires an Mask.\n\n\n\n\n\n")
-                k["noise_mask"] = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))            
+                k["noise_mask"] = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))
+                
+            elif paint_mode == "🎨 Inpaint(MaskDetailer)":
+                if  mask is None:
+                    raise Exception("Efficient Loader ED: Inpaint mode requires an Mask.\n\n\n\n\n\n")
+                inpaint_mode = "mask_detailer"
 
             if this_sync:
                 PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "image_width", "type": "text", "data": image_width})
@@ -4538,13 +4635,13 @@ class TSC_EfficientLoader_ED():
             samples_latent = s
         
         ############################ changeXY MultiAreaConditioning
-        if workflow and multi_sync:
-            for node in workflow["nodes"]:
-                if node["type"] == "MultiAreaConditioning":
-                    node_id = node["id"]
-                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": node_id, "widget_name": "resolutionX", "type": "text", "data": image_width})
-                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": node_id, "widget_name": "resolutionY", "type": "text", "data": image_height})
-                    break
+        # if workflow and multi_sync:
+            # for node in workflow["nodes"]:
+                # if node["type"] == "MultiAreaConditioning":
+                    # node_id = node["id"]
+                    # PromptServer.instance.send_sync("ed-node-feedback", {"node_id": node_id, "widget_name": "resolutionX", "type": "text", "data": image_width})
+                    # PromptServer.instance.send_sync("ed-node-feedback", {"node_id": node_id, "widget_name": "resolutionY", "type": "text", "data": image_height})
+                    # break
                     
         ############################# END EDITED ############################
      
@@ -4591,7 +4688,7 @@ class TSC_EfficientLoader_ED():
         print_loaded_objects_entries(my_unique_id, prompt)
         
         context = new_context_ed(None, model=model, clip=clip, vae=vae, positive=positive_encoded, negative=negative_encoded, 
-                latent=samples_latent, images=pixels, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive, text_neg_g=negative)
+                latent=samples_latent, images=pixels, seed=seed, step_refiner=batch_size, cfg=cfg, sampler=sampler_name, scheduler=scheduler, clip_width=image_width, clip_height=image_height, text_pos_g=positive, text_neg_g=negative, mask=mask, lora_stack=lora_stack)
         
         # elif loader_type == "sdxl":
             # context = new_context_ed(None, model=None, refiner_model=refiner_model, clip=clip, refiner_clip=refiner_clip,
@@ -4663,70 +4760,19 @@ prompt_blacklist_ed = set([
     'filename_prefix', 'file'
 ])
 
-class LoadImage_ED:
-    @classmethod
-    def INPUT_TYPES(s):
-        input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
-        return {
-                "required": {"image": (sorted(files), {"image_upload": True}),},
-                "hidden": {"unique_id": "UNIQUE_ID"},
-                }
+class LoadImage_ED(nodes.LoadImage):
 
     CATEGORY = "Efficiency Nodes/Image"
-
     RETURN_TYPES = ("IMAGE", "MASK", "STRING",)
     RETURN_NAMES = ("IMAGE", "MASK", "PROMPT_TEXT",)
-    FUNCTION = "doit"
+    FUNCTION = "load_image"
 
-    OUTPUT_NODE = True
-
-    @classmethod
-    def IS_CHANGED(s, image):
-        image_path = folder_paths.get_annotated_filepath(image)
-        m = hashlib.sha256()
-        with open(image_path, 'rb') as f:
-            m.update(f.read())
-        return m.digest().hex()
-
-    @classmethod
-    def VALIDATE_INPUTS(s, image):
-        if not folder_paths.exists_annotated_filepath(image):
-            return "Invalid image file: {}".format(image)
-
-        return True
-
-    def doit(self, image, unique_id):
-        image_path = folder_paths.get_annotated_filepath(image)
-        if image is None or image_path is None:
-            return (None, None, None)
-        img = Image.open(image_path)
+    def load_image(self, image):
         
-        output_images = []
-        output_masks = []
-        for i in ImageSequence.Iterator(img):
-            i = ImageOps.exif_transpose(i)
-            if i.mode == 'I':
-                i = i.point(lambda i: i * (1 / 255))
-            image = i.convert("RGB")
-            image = np.array(image).astype(np.float32) / 255.0
-            image = torch.from_numpy(image)[None,]
-            if 'A' in i.getbands():
-                mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
-                mask = 1. - torch.from_numpy(mask)
-            else:
-                mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
-            output_images.append(image)
-            output_masks.append(mask.unsqueeze(0))
-
-        if len(output_images) > 1:
-            output_image = torch.cat(output_images, dim=0)
-            output_mask = torch.cat(output_masks, dim=0)
-        else:
-            output_image = output_images[0]
-            output_mask = output_masks[0]
+        output_image , output_mask = super().load_image(image)
         
-        #################################################        
+        #################################################
+        image_path = folder_paths.get_annotated_filepath(image)
         info = Image.open(image_path).info
 
         positive = ""
@@ -4778,6 +4824,40 @@ class LoadImage_ED:
         _, image_height, image_width, _ = output_image.shape
         text += "\nImage Size: " + str(image_width) + " x " + str(image_height )
         return (output_image, output_mask, text,)
+        
+
+class SaveImage_ED(nodes.SaveImage):
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { },
+                    "optional": {
+                        "context_opt": ("RGTHREE_CONTEXT",),
+                        "image_opt": ("IMAGE",),
+                        "filename_prefix": ("STRING", {"default": "ComfyUI"}),
+                    },
+                "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "unique_id": "UNIQUE_ID"},
+                }
+
+    RETURN_TYPES = ()
+    FUNCTION = "save_images"
+    OUTPUT_NODE = True
+    CATEGORY = "Efficiency Nodes/Image"
+
+    def save_images(self, context_opt=None, image_opt=None, filename_prefix="ComfyUI", prompt=None, extra_pnginfo=None, unique_id=None):
+        images = None
+        
+        if context_opt is not None:
+            _, images = context_2_tuple_ed(context_opt,["images"])
+        if image_opt is not None:
+            images = image_opt
+        
+        if images is not None:
+            PromptServer.instance.send_sync("ed-node-feedback", {"node_id": unique_id, "widget_name": "play_sound", "type": "sound", "data": "play_sound"})
+        
+            return super().save_images(images, filename_prefix=filename_prefix, prompt=prompt, extra_pnginfo=extra_pnginfo)
+        else:
+            return { "ui": { "images": list() } }
 
 ###===========================================================
 # Embedding_Stacker
@@ -4919,10 +4999,6 @@ class Control_Net_Script_ED:
 # TSC KSampler (Efficient) ED
 class TSC_KSampler_ED(TSC_KSampler):
 
-    image_source = {
-        "Latent": 1,
-        "Image": 2,
-    }
     set_seed_cfg_from = {
         "from node to ctx": 1,
         "from context": 2,
@@ -4933,7 +5009,7 @@ class TSC_KSampler_ED(TSC_KSampler):
     def INPUT_TYPES(cls):
         return {"required":
                     {"context": ("RGTHREE_CONTEXT",),
-                     "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from node to ctx"}),
+                     "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from context"}),
                      "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                      "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                      "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
@@ -4941,23 +5017,31 @@ class TSC_KSampler_ED(TSC_KSampler):
                      "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
                      "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                      "preview_method": (["auto", "latent2rgb", "taesd", "vae_decoded_only", "none"],),
-                     "vae_decode": (["true", "true (tiled)", "false"],),
-                     "image_source_to_use": (list(TSC_KSampler_ED.image_source.keys()), {"default": "Latent"}),
                      },
                 "optional": {
-                     "image_opt": ("IMAGE",),
-                     "script": ("SCRIPT",),},
+                     #"vae_decode": (["true", "true (tiled)", "false"],),
+                     "guide_size": ("FLOAT", {"default": 512, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                     "guide_size_for": ("BOOLEAN", {"default": True, "label_on": "mask bbox", "label_off": "crop region"}),
+                     "max_size": ("FLOAT", {"default": 1216, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                     "feather": ("INT", {"default": 15, "min": 0, "max": 100, "step": 1}),
+                     "crop_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10, "step": 0.1}),
+                     "cycle": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+                     "script": ("SCRIPT",),
+                     "detailer_hook": ("DETAILER_HOOK",),
+                     },
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},}
 
     RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE",)
     RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE",)
     OUTPUT_NODE = True
-    FUNCTION = "sample_ed"
+    FUNCTION = "sample"
     CATEGORY = "Efficiency Nodes/Sampling"
 
-    def sample_ed(self, context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, preview_method, vae_decode,
-                image_source_to_use, t_positive=None, t_negative=None, denoise=1.0, refiner_denoise=1.0, prompt=None, 
-                extra_pnginfo=None, my_unique_id=None, image_opt=None, script=None, add_noise=None, start_at_step=None, end_at_step=None,
+    def sample(self, context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, preview_method, 
+                vae_decode="true", guide_size=512, guide_size_for=False, max_size=1216, feather=15, crop_factor=3, cycle=1,
+                t_positive=None, t_negative=None, denoise=1.0, refiner_denoise=1.0, prompt=None, 
+                extra_pnginfo=None, my_unique_id=None, script=None, detailer_hook=None,
+                add_noise=None, start_at_step=None, end_at_step=None,
                 return_with_leftover_noise=None, sampler_type="regular"):
 
 
@@ -4966,26 +5050,35 @@ class TSC_KSampler_ED(TSC_KSampler):
         # if sampler_type == "sdxl":
             # _, model, refiner_model, vae, positive, refiner_positive, negative, refiner_negative, latent_image, optional_image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "refiner_model", "vae", "positive", "refiner_positive", "negative", "refiner_negative", "latent", "images", "seed", "cfg", "sampler", "scheduler"])                                                                                                   
         # else:
-        _, model, vae, positive, negative, latent_image, optional_image, c_seed, c_cfg, c_sampler, c_scheduler = context_2_tuple_ed(context,["model", "vae", "positive", "negative", "latent", "images", "seed", "cfg", "sampler", "scheduler"])
+        _, model, clip, vae, positive, negative, latent_image, optional_image, c_batch, c_seed, c_cfg, c_sampler, c_scheduler, mask, inpaint_mode = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative", "latent", "images", "step_refiner", "seed", "cfg", "sampler", "scheduler", "mask", "inpaint_mode"])
         
+        mask_detailer_mode = False
+        drop_size = 5
+        inpaint_model = False
+        noise_mask_feather = 20
+        if sampler_type=="regular" and extra_pnginfo and "workflow" in extra_pnginfo:
+            workflow = extra_pnginfo["workflow"]
+            for node in workflow["nodes"]:
+                if node["id"] == int(my_unique_id):
+                    mask_detailer_mode = node["properties"]["MaskDetailer mode"]
+                    drop_size = int(node["properties"]["(MaskDetailer) drop size"])
+                    inpaint_model = node["properties"]["(MaskDetailer) inpaint model enable"]
+                    noise_mask_feather = int(node["properties"]["(MaskDetailer) noise mask feather"])
+                    if node["properties"]["Use tiled VAE decode"]:
+                        vae_decode = "true (tiled)"
+                    else:
+                        vae_decode = "true"
+                    break
+                
         if t_positive:
             positive = t_positive
         if t_negative:
-            negative = t_negative            
-        if image_opt is not None:
-            optional_image = image_opt
-            print(f"KSampler ED: Using image_opt instead of context image.")
+            negative = t_negative
         if model is None:
             raise Exception("KSampler (Efficient) ED: Model is None. \n\n\n\n\n\n")
-            
-        if image_source_to_use == "Image":
-            if optional_image is not None:
-                latent_image = vae_encode_image(vae, optional_image, vae_decode)
-            else:
-                raise Exception("KSampler (Efficient) ED: image_source_to_use 'Image' mode requires an image.\n\n\n\n\n\n")
-        else:
-            if latent_image is None:
-                raise Exception("KSampler (Efficient) ED: image_source_to_use 'Latent' mode requires an latent.\n\n\n\n\n\n")        
+                
+        if latent_image is None:
+            raise Exception("KSampler (Efficient) ED requires 'Latent' for sampling.\n\n\n\n\n\n")        
         
         if set_seed_cfg_sampler == "from context":
             if c_seed is None:
@@ -5011,22 +5104,41 @@ class TSC_KSampler_ED(TSC_KSampler):
         #######################################ED Control net script
         if keys_exist_in_script("control_net"):
             cnet_stack = script["control_net"]
-            if cnet_stack:
-                print(f"KSampler ED: apply control net from script")
-                controlnet_conditioning = TSC_Apply_ControlNet_Stack().apply_cnet_stack(positive, negative, cnet_stack)
-                positive, negative = controlnet_conditioning[0], controlnet_conditioning[1]                
-                
-        return_dict = super().sample(model, seed, steps, cfg, sampler_name, scheduler, 
-               positive, negative, latent_image, preview_method, vae_decode, denoise=denoise, prompt=prompt, 
-               extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id,
-               optional_vae=vae, script=script, add_noise=add_noise, start_at_step=start_at_step, end_at_step=end_at_step,
-               return_with_leftover_noise=return_with_leftover_noise, sampler_type=sampler_type)
+            script.pop("control_net", None)
+            print(f"KSampler ED: apply control net from script")
+            controlnet_conditioning = TSC_Apply_ControlNet_Stack().apply_cnet_stack(positive, negative, cnet_stack)
+            positive, negative = controlnet_conditioning[0], controlnet_conditioning[1]                
         
-        original_model, _, _, latent_list, _, output_images = return_dict["result"]
+        if mask_detailer_mode:
+            if not Impact_ed_loading_success:
+                raise Exception("KSampler (Efficient) ED: Inpaint(MaskDetailer) mode is only available when Impact ED loading is successful.\n\n\n\n\n\n")
+
+            print(f"\033[38;5;173mKSampler ED: use MaskDetailer(ImpactPack) for inpainting\033[0m")
+            mask_mode = True
+            refiner_ratio = 0.2
+            output_images, _, _ = MaskDetailer_ED.mask_sampling(optional_image, mask, model, clip, vae, positive, negative,
+                    guide_size, guide_size_for, max_size, mask_mode,
+                    seed, steps, cfg, sampler_name, scheduler, denoise,
+                    feather, crop_factor, drop_size, refiner_ratio, c_batch, cycle, 
+                    detailer_hook, inpaint_model, noise_mask_feather)
+            result_ui = PreviewImage().save_images(output_images, prompt=prompt, extra_pnginfo=extra_pnginfo)["ui"]
+            context = new_context_ed(context, model=model, images=output_images, positive=positive, negative=negative, inpaint_mode="") #RE
+            result = (context, output_images, optional_image,)
+            
+        else:
+            return_dict = super().sample(model, seed, steps, cfg, sampler_name, scheduler, 
+                positive, negative, latent_image, preview_method, vae_decode, denoise=denoise, prompt=prompt, 
+                extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id,
+                optional_vae=vae, script=script, add_noise=add_noise, start_at_step=start_at_step, end_at_step=end_at_step,
+                return_with_leftover_noise=return_with_leftover_noise, sampler_type="regular")
         
-        context = new_context_ed(context, model=original_model,  latent=latent_list, images=output_images,) #RE
-        result = (context, output_images, optional_image,)
-        return {"ui": return_dict["ui"], "result": result}
+            original_model, _, _, latent_list, _, output_images = return_dict["result"]
+            result_ui = return_dict["ui"]
+            
+            context = new_context_ed(context, model=original_model,  latent=latent_list, images=output_images, positive=positive, negative=negative) #RE
+            result = (context, output_images, optional_image,)
+        return {"ui": result_ui, "result": result}
+        
 
 #=======================================================================================================================
 # TSC KSampler SDXL ED (Efficient)
@@ -5080,7 +5192,7 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
     def INPUT_TYPES(cls):
         return {"required":
                     {"context": ("RGTHREE_CONTEXT",),
-                     "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from node to ctx"}),
+                     "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from context"}),
                      "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                      "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                      "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
@@ -5090,10 +5202,10 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
                      "preview_method": (["auto", "latent2rgb", "taesd", "vae_decoded_only", "none"],),
                      "positive": ("STRING", {"default": "CLIP_POSITIVE","multiline": True}),
                      "negative": ("STRING", {"default": "CLIP_NEGATIVE", "multiline": True}),
-                     "vae_decode": (["true", "true (tiled)", "false"],),
-                     "image_source_to_use": (list(TSC_KSampler_ED.image_source.keys()), {"default": "Latent"}),
+                     #"vae_decode": (["true", "true (tiled)", "false"],),
+                     #"image_source_to_use": (list(TSC_KSampler_ED.image_source.keys()), {"default": "Image"}),
                      },
-                "optional": {"image_opt": ("IMAGE",),
+                "optional": {
                      "script": ("SCRIPT",),},
                 "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID",},
                 }
@@ -5104,10 +5216,11 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
     FUNCTION = "backgroundmake_ed"
     CATEGORY = "Efficiency Nodes/Sampling"
 
-    def backgroundmake_ed(self, context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, 
-               preview_method, vae_decode, image_source_to_use, positive=None, negative=None, denoise=1.0, refiner_denoise=1.0, prompt=None, extra_pnginfo=None, my_unique_id=None,
-               image_opt=None, script=None, add_noise=None, start_at_step=None, end_at_step=None,
-               return_with_leftover_noise=None, sampler_type="regular"):
+    def backgroundmake_ed(self, context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, preview_method,
+               positive=None, negative=None, denoise=1.0, refiner_denoise=1.0, 
+               prompt=None, extra_pnginfo=None, my_unique_id=None,
+               script=None, add_noise=None, start_at_step=None, end_at_step=None,
+               return_with_leftover_noise=None, sampler_type="text_ed"):
         
         def get_latent_size(samples):
             size_dict = {}
@@ -5123,17 +5236,14 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
         
         _, clip, optional_latent, optional_image = context_2_tuple_ed(context,["clip", "latent", "images"])
         
-        if image_source_to_use == "Image":
-            if optional_image is not None:
-                _, image_height, image_width, _ = optional_image.shape
-                print(f"KSamplerTEXT ED: size get from image (width {image_width} x height {image_height})")
-            else:
-                raise Exception("KSamplerTEXT ED: image_source_to_use 'Image' mode requires an image.\n\n\n\n\n\n")
-        elif optional_latent is not None:
+        if optional_latent is not None:
             image_width, image_height  = get_latent_size(optional_latent)
             print(f"KSamplerTEXT ED: size get from latent (width {image_width} x height {image_height})")
+        elif optional_image is not None:
+            _, image_height, image_width, _ = optional_image.shape
+            print(f"KSamplerTEXT ED: size get from image (width {image_width} x height {image_height})")
         else:
-            raise Exception("KSamplerTEXT ED: image_source_to_use 'Latent' mode requires a latent.\n\n\n\n\n\n")
+            raise Exception("KSamplerTEXT ED: Reference image or latent is required.\n\n\n\n\n\n")
         
         batch_size = 1
         latent_t = torch.zeros([batch_size, 4, image_height // 8, image_width // 8]).cpu()
@@ -5147,11 +5257,12 @@ class TSC_KSamplerTEXT_ED(TSC_KSampler_ED):
         cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
         negative = [[cond, {"pooled_output": pooled}]]
         
-        return super().sample_ed(context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, 
-               preview_method, vae_decode, image_source_to_use, positive, negative, denoise, refiner_denoise, prompt=prompt,
-               extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id, image_opt=image_opt, script=script,
+        return super().sample(context, set_seed_cfg_sampler, seed, steps, cfg, sampler_name, scheduler, preview_method,
+               vae_decode="true", guide_size=512, guide_size_for=False, max_size=1216, feather=15, crop_factor=3, cycle=1,
+               t_positive=positive, t_negative=negative, denoise=denoise, refiner_denoise=refiner_denoise, prompt=prompt, 
+               extra_pnginfo=extra_pnginfo, my_unique_id=my_unique_id, script=script, detailer_hook=None,
                add_noise=None, start_at_step=start_at_step, end_at_step=None,
-               return_with_leftover_noise=None, sampler_type="regular")
+               return_with_leftover_noise=None, sampler_type=sampler_type)
 
 ########################################################################################################################
 # NODE MAPPING
@@ -5161,8 +5272,10 @@ NODE_CLASS_MAPPINGS = {
     "KSampler (Efficient) 💬ED": TSC_KSampler_ED,
     "KSampler TEXT (Eff.) 💬ED": TSC_KSamplerTEXT_ED,    
     "Load Image 💬ED": LoadImage_ED,
+    "Save Image 💬ED": SaveImage_ED,
     "Control Net Script 💬ED": Control_Net_Script_ED,
     "Embedding Stacker 💬ED": Embedding_Stacker_ED,
+    "Apply LoRA Stack 💬ED": TSC_Apply_LoRA_Stack_ED,
     
     "KSampler (Efficient)": TSC_KSampler,
     "KSampler Adv. (Efficient)":TSC_KSamplerAdvanced,
@@ -5206,52 +5319,57 @@ NODE_CLASS_MAPPINGS = {
 #=================================================================================
 ##################################                FaceDetailer_ED       ##################################
 
-MAX_CASHE_ED_FACE = 2
+Impact_ed_loading_success = False
+MAX_CASHE_ED_FACE = 1
 
 if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
-    printout = "Attempting to add 'FaceDetailer ED' Node (ComfyUI Impact Pack add-on)..."
+    printout = "Attempting to add 'FaceDetailer ED & MaskDetailer ED' Node (Impact Pack add-on)..."
     print(f"{message('Efficiency Nodes ED:')} {printout}", end="")
-    try:
-        sys_modules_backup = sys.modules
-        impact_path = os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")
-        subpack_path = os.path.join(impact_path, "impact_subpack")
-        modules_path = os.path.join(impact_path, "modules")
-        sys.path.append(impact_path)
-        sys.path.append(subpack_path)
-        sys.path.append(modules_path)
+    
+    try:    
+        if "FaceDetailer" in nodes.NODE_CLASS_MAPPINGS and "MaskDetailerPipe" in nodes.NODE_CLASS_MAPPINGS and "DetailerForEachDebug" in nodes.NODE_CLASS_MAPPINGS:
+            FaceDetailer = nodes.NODE_CLASS_MAPPINGS["FaceDetailer"]
+            MaskDetailerPipe = nodes.NODE_CLASS_MAPPINGS["MaskDetailerPipe"]
+            DetailerForEachDebug = nodes.NODE_CLASS_MAPPINGS["DetailerForEachDebug"]
+        else:
+            #utils.try_install_custom_node('https://github.com/ltdrdata/ComfyUI-Impact-Pack', "To use 'FaceDetailer ED, 'Impact Pack' extension is required.")
+            raise Exception("'Impact Pack' is not installed.")
         
-        import impact.impact_pack as impact_pack
-        import impact.subcore as subcore
+        if "UltralyticsDetectorProvider" in nodes.NODE_CLASS_MAPPINGS and "SAMLoader" in nodes.NODE_CLASS_MAPPINGS:
+            UltralyticsDetectorProvider = nodes.NODE_CLASS_MAPPINGS["UltralyticsDetectorProvider"]
+            SAMLoader = nodes.NODE_CLASS_MAPPINGS["SAMLoader"]
+        else:
+            raise Exception("'UltralyticsDetectorProvider' or 'SAMLoader' are not found.")
         
-        def detector_model(model_name):    
+        def detector_model(model_name, type):    
+            detector_type = "ultra_" + type + "_detector"
             if model_name is None or model_name == "None":
                 return None                
-            cash = cashload_ed("ultra_bbox_segm_detector", model_name)
+            cash = cashload_ed(detector_type, model_name)
             if cash is not None:
                 return (cash)
-            model_path = folder_paths.get_full_path("ultralytics", model_name)
-            m = subcore.load_yolo(model_path)
-            if model_name.startswith("bbox"):
-                model = subcore.UltraBBoxDetector(m)
+            
+            if type == "bbox":
+                model, _ = UltralyticsDetectorProvider().doit(model_name)
             else:
-                model = subcore.UltraSegmDetector(m)                
-            cashsave_ed("ultra_bbox_segm_detector", model_name, model, MAX_CASHE_ED_FACE)
+                _, model = UltralyticsDetectorProvider().doit(model_name)         
+            cashsave_ed(detector_type, model_name, model, MAX_CASHE_ED_FACE)
             return (model)
                 
-        def load_sam_model(model_name, device_mode="auto"):
+        def load_sam_model(model_name, device_mode):
             if model_name == "None" or model_name is None:                
                 return None
             cash = cashload_ed("sam_model", model_name)
             if cash is not None:
                 return (cash)
-            (sam, ) = impact_pack.SAMLoader.load_model(None, model_name, device_mode=device_mode)
+            (sam, ) = SAMLoader().load_model(model_name, device_mode)
             cashsave_ed("sam_model", model_name, sam, MAX_CASHE_ED_FACE)
             return (sam)
 
-        class FaceDetailer_ED(impact_pack.FaceDetailer):
+        class FaceDetailer_ED():
             @classmethod
             def INPUT_TYPES(s):
-                bboxs = ["bbox/"+x for x in folder_paths.get_filename_list("ultralytics_bbox")]
+                bboxs = ["bbox/"+x for x in folder_paths.get_filename_list("ultralytics_bbox")] + ["segm/"+x for x in folder_paths.get_filename_list("ultralytics_segm")]
                 segms = ["None"] + ["segm/"+x for x in folder_paths.get_filename_list("ultralytics_segm")]
                 sams = ["None"] + [x for x in folder_paths.get_filename_list("sams") if 'hq' not in x]
                 return {"required": {
@@ -5291,19 +5409,18 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
                         "optional": {
                             "image_opt": ("IMAGE",),
                             "detailer_hook": ("DETAILER_HOOK",),
-                            # "positive_text_opt": ("STRING", {"forceInput": True}),
-                            # "negative_text_opt": ("STRING", {"forceInput": True}),
                             "wildcard": ("STRING", {"multiline": True, "dynamicPrompts": False}),
                             "inpaint_model": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
                             "noise_mask_feather": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1}),
                         },
-                        "hidden": {"my_unique_id": "UNIQUE_ID",},}
+                        "hidden": {"my_unique_id": "UNIQUE_ID",},
+                    }
 
-            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "MASK", "IMAGE",)
-            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE", "CROPPED_REFINED", "CROPPED_ENHANCED_ALPHA", "MASK", "CNET_IMAGES",)
-            OUTPUT_IS_LIST = (False, False, False, True, True, False, True,)    
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE", "IMAGE", "MASK", "IMAGE",)
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "CROPPED_REFINED", "CROPPED_ENHANCED_ALPHA", "MASK", "CNET_IMAGES",)
+            OUTPUT_IS_LIST = (False, False, True, True, False, True,)    
             FUNCTION = "doit_ed"
-            CATEGORY = "ImpactPack/Simple"
+            CATEGORY = "Efficiency Nodes/Image"
 
             def doit_ed(self, context, set_seed_cfg_sampler, bbox_detector, segm_detector_opt, sam_model_opt, sam_mode, 
                     guide_size, guide_size_for, 
@@ -5318,19 +5435,6 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
                 if image_opt is not None:       
                     image = image_opt
                     print(f"FaceDetailer ED: Using image_opt instead of context image.")
-                # if positive_text_opt and positive_text_opt != "":
-                    # positive = None
-                    # tokens = clip.tokenize(positive_text_opt)
-                    # cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
-                    # positive = [[cond, {"pooled_output": pooled}]]
-                    # print(f"\033[32mFaceDetailer ED: use positive text to positive conditioning\033[0m")
-
-                # if negative_text_opt and negative_text_opt != "":
-                    # negative = None
-                    # tokens = clip.tokenize(negative_text_opt)
-                    # cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
-                    # negative = [[cond, {"pooled_output": pooled}]]
-                    # print(f"\033[32mFaceDetailer ED: use negative text to negative conditioning\033[0m")
         
                 if set_seed_cfg_sampler == "from context":
                     if c_seed is None:
@@ -5347,31 +5451,216 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI-Impact-Pack")):
                 elif set_seed_cfg_sampler =="from node to ctx":
                     context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)      
         
-                bbox_detector = detector_model(bbox_detector)
-                segm_detector_opt = detector_model(segm_detector_opt)
-                sam_model_opt = load_sam_model(sam_model_opt, sam_mode)
-
-                result_img, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, _, result_cnet_images = super().doit(image, model, clip, vae, guide_size, guide_size_for, max_size, seed, steps, cfg, sampler_name, scheduler,
-                    positive, negative, denoise, feather, noise_mask, force_inpaint,
-                    bbox_threshold, bbox_dilation, bbox_crop_factor,
-                    sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
+                bbox_detector = detector_model(bbox_detector, "bbox")
+                segm_detector_opt = detector_model(segm_detector_opt, "segm")
+                sam_model_opt = load_sam_model(sam_model_opt, sam_mode)                
+                
+                result_img, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, _, result_cnet_images = \
+                    FaceDetailer().doit(image, model, clip, vae, guide_size, guide_size_for, max_size, 
+                    seed, steps, cfg, sampler_name, scheduler, positive, negative, denoise, feather, noise_mask, force_inpaint,
+                    bbox_threshold, bbox_dilation, bbox_crop_factor, sam_detection_hint, sam_dilation, 
+                    sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
                     sam_mask_hint_use_negative, drop_size, bbox_detector, wildcard, cycle=cycle,
                     sam_model_opt=sam_model_opt, segm_detector_opt=segm_detector_opt, detailer_hook=detailer_hook, 
                     inpaint_model=inpaint_model, noise_mask_feather=noise_mask_feather)
 
                 context = new_context_ed(context, images=result_img) #RE 
-                return (context, result_img, image, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, result_cnet_images,)
+                return (context, result_img, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, result_cnet_images,)
             
-        NODE_CLASS_MAPPINGS.update({"FaceDetailer 💬ED": FaceDetailer_ED})
-        sys.path.remove(impact_path)
-        sys.path.remove(subpack_path)
-        sys.path.remove(modules_path)
-        sys.modules = sys_modules_backup
+        NODE_CLASS_MAPPINGS.update({"FaceDetailer 💬ED": FaceDetailer_ED})        
+
+##################################                MaskDetailer_ED       ##################################
+
+        class MaskDetailer_ED():
+            @classmethod
+            def INPUT_TYPES(s):
+                return {"required": {
+                            "context": ("RGTHREE_CONTEXT",),
+                            "set_seed_cfg_sampler_batch": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from context"}),
+
+                            "guide_size": ("FLOAT", {"default": 384, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                            "guide_size_for": ("BOOLEAN", {"default": True, "label_on": "mask bbox", "label_off": "crop region"}),
+                            "max_size": ("FLOAT", {"default": 1024, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                            "mask_mode": ("BOOLEAN", {"default": True, "label_on": "masked only", "label_off": "whole"}),
+
+                            "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                            "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+                            "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                            "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                            "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                            "denoise": ("FLOAT", {"default": 0.5, "min": 0.0001, "max": 1.0, "step": 0.01}),
+
+                            "feather": ("INT", {"default": 5, "min": 0, "max": 100, "step": 1}),
+                            "crop_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10, "step": 0.1}),
+                            "drop_size": ("INT", {"min": 1, "max": MAX_RESOLUTION, "step": 1, "default": 10}),
+                            "refiner_ratio": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0}),
+                            "batch_size": ("INT", {"default": 1, "min": 1, "max": 100}),
+
+                            "cycle": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+                        },
+                        "optional": {
+                            "image_opt": ("IMAGE",),
+                            "mask_opt": ("MASK", ),
+                            "detailer_hook": ("DETAILER_HOOK",),
+                            "inpaint_model": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
+                            "noise_mask_feather": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1}),
+                        },
+                        "hidden": {"my_unique_id": "UNIQUE_ID",},
+                    }
+
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE", "IMAGE", )
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "CROPPED_REFINED", "CROPPED_ENHANCED_ALPHA", )
+            OUTPUT_IS_LIST = (False, False, True, True,)
+            FUNCTION = "doit_ed"
+
+            CATEGORY = "Efficiency Nodes/Image"
+
+            def mask_sampling(image, mask, model, clip, vae, positive, negative, guide_size, guide_size_for, max_size, mask_mode,
+                    seed, steps, cfg, sampler_name, scheduler, denoise,
+                    feather, crop_factor, drop_size, refiner_ratio, batch_size, cycle, 
+                    detailer_hook, inpaint_model, noise_mask_feather):
+                
+                basic_pipe = (model, clip, vae, positive, negative)
+                
+                enhanced_img_batch, cropped_enhanced_list, cropped_enhanced_alpha_list, _, _ = \
+                    MaskDetailerPipe().doit(image, mask, basic_pipe, guide_size, guide_size_for, max_size, mask_mode,
+                    seed, steps, cfg, sampler_name, scheduler, denoise, feather, crop_factor, drop_size, refiner_ratio, 
+                    batch_size, cycle, None, detailer_hook, inpaint_model, noise_mask_feather)
+                return (enhanced_img_batch, cropped_enhanced_list, cropped_enhanced_alpha_list)                
+                
+            def doit_ed(self, context, set_seed_cfg_sampler_batch, guide_size, guide_size_for, max_size, mask_mode,
+                    seed, steps, cfg, sampler_name, scheduler, denoise,
+                    feather, crop_factor, drop_size, refiner_ratio, batch_size, cycle=1,
+                    image_opt=None, mask_opt=None, detailer_hook=None, inpaint_model=False, noise_mask_feather=0, my_unique_id=None):
+        
+                _, model, clip, vae, positive, negative, image, c_batch, c_seed, c_cfg, c_sampler, c_scheduler, mask = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative",  "images", "step_refiner", "seed", "cfg", "sampler", "scheduler", "mask"])
+        
+                if image_opt is not None:
+                    image = image_opt
+                    print(f"MaskDetailer ED: Using image_opt instead of context image.")
+                if mask_opt is not None:
+                    mask = mask_opt
+                    print(f"MaskDetailer ED: Using mask_opt instead of context mask.")
+        
+                if set_seed_cfg_sampler_batch == "from context":
+                    if c_seed is None:
+                        raise Exception("MaskDetailer ED: No seed, cfg, sampler, scheduler in the context.\n\n\n\n\n\n")
+                    else:
+                        seed = c_seed
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
+                        cfg = c_cfg
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "cfg", "type": "text", "data": cfg})
+                        sampler_name = c_sampler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "sampler_name", "type": "text", "data": sampler_name})
+                        scheduler = c_scheduler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "scheduler", "type": "text", "data": scheduler})
+                        batch_size = c_batch
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "batch_size", "type": "text", "data": batch_size})
+                elif set_seed_cfg_sampler =="from node to ctx":
+                    context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)      
+                
+                enhanced_img_batch, cropped_enhanced_list, cropped_enhanced_alpha_list = \
+                    MaskDetailer_ED.mask_sampling(image, mask, model, clip, vae, positive, negative,
+                    guide_size, guide_size_for, max_size, mask_mode,
+                    seed, steps, cfg, sampler_name, scheduler, denoise,
+                    feather, crop_factor, drop_size, refiner_ratio, batch_size, cycle,
+                    detailer_hook, inpaint_model, noise_mask_feather)
+
+                context = new_context_ed(context, images=enhanced_img_batch) #RE 
+                return (context, enhanced_img_batch, cropped_enhanced_list, cropped_enhanced_alpha_list,)
+
+        NODE_CLASS_MAPPINGS.update({"MaskDetailer 💬ED": MaskDetailer_ED})
+
+##################################                Detailer (SEGS) ED       ##################################
+
+        class DetailerForEach_ED():
+            @classmethod
+            def INPUT_TYPES(s):
+                return {"required": {
+                            "context": ("RGTHREE_CONTEXT",),
+                            "segs": ("SEGS", ),
+                            "set_seed_cfg_sampler": (list(TSC_KSampler_ED.set_seed_cfg_from.keys()), {"default": "from context"}),
+
+                            "guide_size": ("FLOAT", {"default": 384, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                            "guide_size_for": ("BOOLEAN", {"default": True, "label_on": "mask bbox", "label_off": "crop region"}),
+                            "max_size": ("FLOAT", {"default": 1024, "min": 64, "max": nodes.MAX_RESOLUTION, "step": 8}),
+                            "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                            "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+                            "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+                            "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+                            "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                            "denoise": ("FLOAT", {"default": 0.5, "min": 0.0001, "max": 1.0, "step": 0.01}),
+                            "feather": ("INT", {"default": 5, "min": 0, "max": 100, "step": 1}),
+                            
+                            "noise_mask": ("BOOLEAN", {"default": True, "label_on": "enabled", "label_off": "disabled"}),
+                            "force_inpaint": ("BOOLEAN", {"default": True, "label_on": "enabled", "label_off": "disabled"}),
+                            "wildcard": ("STRING", {"multiline": True, "dynamicPrompts": False}),
+
+                            "cycle": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+                        },
+                        "optional": {
+                            "image_opt": ("IMAGE",),
+                            "detailer_hook": ("DETAILER_HOOK",),
+                            "inpaint_model": ("BOOLEAN", {"default": False, "label_on": "enabled", "label_off": "disabled"}),
+                            "noise_mask_feather": ("INT", {"default": 20, "min": 0, "max": 100, "step": 1}),
+                        },
+                        "hidden": {"my_unique_id": "UNIQUE_ID",},
+                    }
+
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "SEGS", "IMAGE", "IMAGE", "IMAGE", "IMAGE", )
+            RETURN_NAMES = ("CONTEXT", "SEGS", "OUTPUT_IMAGE", "CROPPED_REFINED", "CROPPED_REFINED_ALPHA", "CNET_IMAGES",)
+            OUTPUT_IS_LIST = (False, False, False, True, True, True)
+            
+            FUNCTION = "doit_ed"
+
+            CATEGORY = "Efficiency Nodes/Image"          
+                
+            def doit_ed(self, context, set_seed_cfg_sampler, segs, guide_size, guide_size_for, max_size, 
+                    seed, steps, cfg, sampler_name, scheduler,
+                    denoise, feather, noise_mask, force_inpaint, wildcard, cycle=1,
+                    image_opt=None, detailer_hook=None, refiner_basic_pipe_opt=None,
+                    inpaint_model=False, noise_mask_feather=0, my_unique_id=None):
+                
+                _, model, clip, vae, positive, negative, image, c_batch, c_seed, c_cfg, c_sampler, c_scheduler, mask = context_2_tuple_ed(context,["model", "clip", "vae", "positive", "negative",  "images", "step_refiner", "seed", "cfg", "sampler", "scheduler", "mask"])
+        
+                if image_opt is not None:
+                    image = image_opt
+                    print(f"Detailer (SEGS) ED: Using image_opt instead of context image.")
+                
+                if len(image) > 1:
+                    raise Exception('[Impact Pack] ERROR: Detailer (SEGS) ED does not allow image batches.\nPlease refer to https://github.com/ltdrdata/ComfyUI-extension-tutorials/blob/Main/ComfyUI-Impact-Pack/tutorial/batching-detailer.md for more information.')
+        
+                if set_seed_cfg_sampler == "from context":
+                    if c_seed is None:
+                        raise Exception("Detailer (SEGS) ED: No seed, cfg, sampler, scheduler in the context.\n\n\n\n\n\n")
+                    else:
+                        seed = c_seed
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "seed", "type": "text", "data": seed})
+                        cfg = c_cfg
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "cfg", "type": "text", "data": cfg})
+                        sampler_name = c_sampler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "sampler_name", "type": "text", "data": sampler_name})
+                        scheduler = c_scheduler
+                        PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "scheduler", "type": "text", "data": scheduler})
+                elif set_seed_cfg_sampler =="from node to ctx":
+                    context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)
+
+                enhanced_img, _, cropped_enhanced, cropped_enhanced_alpha, cnet_pil_list = \
+                    DetailerForEachDebug().doit(image, segs, model, clip, vae, guide_size, guide_size_for, 
+                    max_size, seed, steps, cfg, sampler_name, scheduler, positive, negative, denoise,
+                    feather, noise_mask, force_inpaint, wildcard, detailer_hook=detailer_hook,
+                    cycle=cycle, inpaint_model=inpaint_model, noise_mask_feather=noise_mask_feather)
+ 
+                context = new_context_ed(context, images=enhanced_img) #RE 
+                return (context, segs, enhanced_img, cropped_enhanced, cropped_enhanced_alpha, cnet_pil_list,)
+
+        NODE_CLASS_MAPPINGS.update({"Detailer (SEGS) 💬ED": DetailerForEach_ED})
+
+        Impact_ed_loading_success = True        
         print(f"\r{message('Efficiency Nodes ED:')} {printout}{success('Success!')}")
 
     except Exception:
         print(f"\r{message('Efficiency Nodes ED:')} {printout}{error('Failed!')}")
-
 
 
 #=================================================================================#
@@ -5382,24 +5671,30 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
     printout = "Attempting to add 'UltimateSDUpscale ED' Node (UltimateSDUpscale add-on)..."
     print(f"{message('Efficiency Nodes ED:')} {printout}", end="")
     try:
-        ultimate_sd_path = os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")
-        sys_modules_backup = sys.modules
-        sys.path.insert(0, ultimate_sd_path)
-        if 'utils' in sys.modules:
-            sys.modules.pop('utils', None)
-            
-        import ComfyUI_UltimateSDUpscale.nodes as ultimate_sd
-        import comfy_extras.nodes_upscale_model as nodes_upscale_model        
-
+        if "UltimateSDUpscale" in nodes.NODE_CLASS_MAPPINGS:
+            UltimateSDUpscale = nodes.NODE_CLASS_MAPPINGS["UltimateSDUpscale"]
+        else:
+            raise Exception("'Ultimate SD Upscale' is not installed.")
+        
+        if "UpscaleModelLoader" in nodes.NODE_CLASS_MAPPINGS:
+            UpscaleModelLoader = nodes.NODE_CLASS_MAPPINGS["UpscaleModelLoader"]
+        else:
+            raise Exception("'Upscale Model Loader' is not loaded.")
+        
         def load_upscale_model(model_name):
             cash = cashload_ed("ultimate_sd_upscaler", model_name)
             if cash is not None:
                 return (cash)
-            (model, ) = nodes_upscale_model.UpscaleModelLoader.load_model(None, model_name)
+            (model, ) = UpscaleModelLoader().load_model(model_name)
             cashsave_ed("ultimate_sd_upscaler", model_name, model, MAX_CASHE_ED_ULTIMATE_UPSCALE)
             return (model)
 
-        class UltimateSDUpscaleED(ultimate_sd.UltimateSDUpscale):
+        class UltimateSDUpscaleED():
+            set_tile_size_from_what = {
+                "Image size": 1,
+                "Canvas size": 2,
+                "Node setting": 3,
+            }
             @classmethod
             def INPUT_TYPES(s):
                 return {"required": 
@@ -5415,14 +5710,17 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
                         "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),                        
                         "denoise": ("FLOAT", {"default": 0.2, "min": 0.0, "max": 1.0, "step": 0.01}),
                         # Upscale Params
-                        "mode_type": (list(ultimate_sd.MODES.keys()),),
-                        "set_tile_size_from_image_size": ("BOOLEAN", {"default": True}),
+                        #"mode_type": (list(UltimateSDUpscaleED.MODES.keys()),),
+                        "mode_type": UltimateSDUpscale().INPUT_TYPES()["required"]["mode_type"],
+                        #"set_tile_size_from": ("BOOLEAN", {"default": True}),
+                        "set_tile_size_from": (list(UltimateSDUpscaleED.set_tile_size_from_what.keys()), {"default": "Image size"}),
                         "tile_width": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
                         "tile_height": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
                         "mask_blur": ("INT", {"default": 8, "min": 0, "max": 64, "step": 1}),
                         "tile_padding": ("INT", {"default": 32, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
                         # Seam fix params
-                        "seam_fix_mode": (list(ultimate_sd.SEAM_FIX_MODES.keys()),),
+                        #"seam_fix_mode": (list(UltimateSDUpscaleED.SEAM_FIX_MODES.keys()),),
+                        "seam_fix_mode": UltimateSDUpscale().INPUT_TYPES()["required"]["seam_fix_mode"],
                         "seam_fix_denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
                         "seam_fix_width": ("INT", {"default": 64, "min": 0, "max": MAX_RESOLUTION, "step": 8}),
                         "seam_fix_mask_blur": ("INT", {"default": 8, "min": 0, "max": 64, "step": 1}),
@@ -5434,14 +5732,14 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
                     "optional": {"image_opt": ("IMAGE",),},
                     "hidden": {"my_unique_id": "UNIQUE_ID",},}
 
-            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE", "IMAGE",)
-            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE", "SOURCE_IMAGE",)
+            RETURN_TYPES = ("RGTHREE_CONTEXT", "IMAGE",)
+            RETURN_NAMES = ("CONTEXT", "OUTPUT_IMAGE",)
             FUNCTION = "upscale_ed"
-            CATEGORY = "image/upscaling"
+            CATEGORY = "Efficiency Nodes/Image"
 
             def upscale_ed(self, context, set_seed_cfg_sampler, upscale_model, upscale_by, 
                         seed, steps, cfg, sampler_name, scheduler, denoise, 
-                        mode_type, set_tile_size_from_image_size, tile_width, tile_height, mask_blur, tile_padding,
+                        mode_type, set_tile_size_from, tile_width, tile_height, mask_blur, tile_padding,
                         seam_fix_mode, seam_fix_denoise, seam_fix_mask_blur,
                         seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode, image_opt=None, my_unique_id=None):
         
@@ -5465,25 +5763,30 @@ if os.path.exists(os.path.join(custom_nodes_dir, "ComfyUI_UltimateSDUpscale")):
                 elif set_seed_cfg_sampler =="from node to ctx":
                     context = new_context_ed(context, seed=seed, cfg=cfg, sampler=sampler_name, scheduler=scheduler)
             
-                if set_tile_size_from_image_size:
+                if set_tile_size_from == "Image size":
                     _, tile_height, tile_width, _ = image.shape
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_width", "type": "text", "data": tile_width})
+                    PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_height", "type": "text", "data": tile_height})
+                elif set_tile_size_from == "Canvas size":
+                    _, tile_height, tile_width, _ = image.shape
+                    tile_height = tile_height * upscale_by
+                    tile_width = tile_width * upscale_by
                     PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_width", "type": "text", "data": tile_width})
                     PromptServer.instance.send_sync("ed-node-feedback", {"node_id": my_unique_id, "widget_name": "tile_height", "type": "text", "data": tile_height})
                 
                 upscaler = load_upscale_model(upscale_model)        
                         
-                (tensor,) = super().upscale(image, model, positive, negative, vae, upscale_by, seed,
+                (tensor,) = UltimateSDUpscale().upscale(image, model, positive, negative, vae, upscale_by, seed,
                         steps, cfg, sampler_name, scheduler, denoise, upscaler,
                         mode_type, tile_width, tile_height, mask_blur, tile_padding,
                         seam_fix_mode, seam_fix_denoise, seam_fix_mask_blur,
                         seam_fix_width, seam_fix_padding, force_uniform_tiles, tiled_decode)
                 
                 context = new_context_ed(context, images=tensor) #RE        
-                return (context, tensor, image,)
+                return (context, tensor,)
 
         NODE_CLASS_MAPPINGS.update({"Ultimate SD Upscale 💬ED": UltimateSDUpscaleED})
-        sys.path.remove(ultimate_sd_path)
-        sys.modules = sys_modules_backup
+
         print(f"\r{message('Efficiency Nodes ED:')} {printout}{success('Success!')}")
 
     except Exception:

@@ -9,9 +9,9 @@ const SEED_BEHAVIOR_DECREMENT = 'Decrement';
 const NODE_WIDGET_MAP = {
 	"Efficient Loader 💬ED": "seed",
 	// "Eff. Loader SDXL 💬ED": "seed",
-	"KSampler (Efficient) 💬ED": "seed",
+	//"KSampler (Efficient) 💬ED": "seed",
 	// "KSampler SDXL (Eff.) 💬ED": "noise_seed",
-	"KSampler TEXT (Eff.) 💬ED": "seed",
+	//"KSampler TEXT (Eff.) 💬ED": "seed",
     "KSampler (Efficient)": "seed",
     "KSampler Adv. (Efficient)": "noise_seed",
     "KSampler SDXL (Eff.)": "noise_seed",
