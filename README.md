@@ -1,13 +1,15 @@
 ✨🍬Efficiency Nodes for ComfyUI Version 2.0+ 에서 다양한 기능을 추가한 포크 버전. 원본의 설명은 https://github.com/jags111/efficiency-nodes-comfyui 를 참조.🍬
 
 
-<b> Efficiency Nodes 💬ED
+<b> Efficiency Nodes 💬ED (V5)
 =======
 ### 워크플로 (EXIF 있음):
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/8944c123-82ab-43b4-aa6d-30fcbdf60d1a" width="800" style="display: inline-block;">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/ba9287bf-dfe5-4392-acfd-7e613672dfea" width="800" style="display: inline-block;">
 </p>
 원본과 다르게 💬ED노드는 Context 링크를 주고 받는다.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-( 오른쪽 아래에 BiRefNet이 포함되어 있다. 필요없으면 삭제하자.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BiRefNet은 배경을 삭제하는데 정말 좋은 도구이다. 한번 써보는 것을 추천)<br>
 
 ### Context:
 <p align="left">
@@ -36,6 +38,11 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
     <p></p>
     <li>클릭 한번으로 Txt2Img, Img2Img, Inpaint 모드 설정이 가능하다.<br><i>(Txt2Img로 설정시 처음에 연결된 Ksampler (Efficient) 💬ED의 denoise 값이 자동으로 1로 설정됨.)</i><br>
       <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/0f8549b8-cbe0-4662-b922-df21545e2d8f" width="250" style="display: inline-block;">
+      </li>
+    <p></p>
+    <li>Inpaint(MaskDetailer) 모드가 추가 되었다.<br><i>(그냥 Inpaint를 사용하면 점점 화질이 열화되는데 Impact Pack의 MaskDetailer를 임포트 시켰다.</i><br>
+      <i>자세한 것은 Inpaint(MaskDetailer)에서 설명.)</i><br>
+      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/5b04b764-f995-4350-b897-e42041686a2d" width="250" style="display: inline-block;">
       </li>
     <li>seed, cfg, sampler, scheduler를 설정하고 <code>context</code>에 저장. 후에 Ksampler (Efficient) 💬ED등에서 그 설정값을 이용할 수 있다.</li>
     <p></p>
@@ -98,6 +105,20 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
       - 샘플링 후 이미지 생성을 위한 vae 디코딩/인코딩시에 무엇을 사용할지 선택하는 창이다.<br>
       - True, True(tiled), false가 있으며 기본은 True, True(tiled)는 Tiled VAE decode 사용(느리다. 대신 VRAM이 부족해도 큰 이미지 처리 가능), false는 이미지를 내보내지 않고 context에 latent만 내보낸다.
     </li>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
+    <summary><b>Inpaint(MaskDetailer) 모드</b></summary>
+<p></p>
+- Efficient Loader 💬ED에서 Inpaint(MaskDetailer) 모드를 선택하면 에피션트 샘플러 💬ED가 마스크 디테일러 모드로 변경된다.<p></p>
+- Impact Pack의 MaskDetailer를 그대로 통합시켰다.<p></p>
+- 인페인트에 정말 탁월하고 화질의 열화가 일어나지 않는다.<br>
+  (사용법은 기존의 MaskDetailer와 동일하다.)
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/09e4dfd2-e1f7-4118-8bb2-2adcdca236d0" width="500">
+</p>
+    
+    
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
