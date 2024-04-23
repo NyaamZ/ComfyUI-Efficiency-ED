@@ -290,4 +290,4 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 
 
 ## 알려진 버그
-<li>comfyui-art-venture : 임포팅 충돌로 FaceDetailer 💬ED 로딩이 실패함</li><p></p>
+<li>----</li><p></p>
