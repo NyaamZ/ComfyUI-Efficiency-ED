@@ -135,6 +135,18 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
+    <summary><b>Save Image 💬ED</b></summary>
+<p></p>
+<p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/560dedba-6e04-448d-9727-9dc4e1935655" width="300">
+</p>
+- 원래 Save Image에서 Context입력을 받을 수 있고 이미지를 입력 받으면 사운드를 재생하게 수정한 노드.<p></p>
+<li>Properties Panel에서 다음 처럼 사운드 재생을 끄고 켜거나 음량을 조절할 수 있다. (음량 범위:0 ~ 1)<br>
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d9f365c8-3363-4737-a21b-e1f1d2f995e6" width="500"><br>
+</li>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
   <summary><b>LoRA Stacker</b></summary>
   <p></p>
   <p align="left">
