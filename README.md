@@ -8,7 +8,7 @@
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/17561403-0ddd-4744-9213-5a9d2a8fe877" width="800" style="display: inline-block;">
 </p>
 원본과 다르게 💬ED노드는 Context 링크를 주고 받는다.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;-( 오른쪽 아래에 BiRefNet이 포함되어 있다. 필요없으면 삭제하자.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;-( 오른쪽 아래에 BiRefNet이 포함되어 있다. 필요없으면 워크플로에서 삭제하자.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BiRefNet은 필요없는 배경을 삭제하는데 정말 좋은 도구이다. 한번 써보는 것을 추천)<br>
 
 ### Context:
