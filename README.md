@@ -227,6 +227,28 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 </details>
 <details>
   <p></p>
+  <summary><b>MaskDetailer 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/87bbd155-8b06-423d-b8e8-04a8f55b223d" width="250">
+  </p>
+  - Impact pack의 MaskDetailer 애드온. Impact pack이 설치되지 않았다면 보이지 않는다.<p></p>
+  - context를 입력받을 수 있게 수정한 버전.<p></p>
+  - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있음.<p></p>
+</details>
+<details>
+  <p></p>
+  <summary><b>Detailer (SEGS) 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/c538b972-0e14-4b53-861d-ed0f78da0248" width="250">
+  </p>
+  - Impact pack의 Detailer (SEGS) 애드온. Impact pack이 설치되지 않았다면 보이지 않는다.<p></p>
+  - context를 입력받을 수 있게 수정한 버전.<p></p>
+  - 💬ED 샘플러와 마찬가지로 set_seed_cfg_sampler 설정이 있음.<p></p>
+</details>
+<details>
+  <p></p>
   <summary><b>Ultimate SD Upscale 💬ED</b></summary>
   <p></p>
   <p align="left">
