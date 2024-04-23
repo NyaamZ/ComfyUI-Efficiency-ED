@@ -130,7 +130,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
 <p></p>
-    <summary><b>Save Image 💬ED</b></summary>
+    <summary><b>Save Image 🔔ED</b></summary>
 <p></p>
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/8e730793-1c61-4152-90a7-343de68d16a6" width="300">
