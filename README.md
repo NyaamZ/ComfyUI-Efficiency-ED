@@ -92,18 +92,12 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
       - from node to ctx는 현재 노드의 seed, cfg, sampler, scheduler 설정을 context에 내보내기<br>
       - from context는 context에서 seed, cfg, sampler, scheduler 설정을 가져오기<br>
       - from node only는 현재 노드의 seed, cfg, sampler, scheduler 설정을 이용하고 context에 저장하지는 않는다.<br>
-    </li>
+    </li>    
     <p></p>
-    <li>image_source_to_use 설정<br>
-      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/65cb4134-d784-4810-a56c-49b09f8bf8ef" width="250" style="display: inline-block;"><br>
-      - context의 Image나 latent 중 무엇을 이미지 소스로 샘플링할까 선택하는 창이다.<br>
-      - Image가 선택되면 vae decode 설정에 따라 내부에서 vae 인코딩을 하며 image_opt가 입력되면 그 이미지를 우선 사용한다.
-    </li>
-    <p></p>
-    <li>vae decode 설정<br>
-      <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/592edea3-2e16-4c29-90a3-3dd5ddd0eb63" width="250" style="display: inline-block;"><br>
-      - 샘플링 후 이미지 생성을 위한 vae 디코딩/인코딩시에 무엇을 사용할지 선택하는 창이다.<br>
-      - True, True(tiled), false가 있으며 기본은 True, True(tiled)는 Tiled VAE decode 사용(느리다. 대신 VRAM이 부족해도 큰 이미지 처리 가능), false는 이미지를 내보내지 않고 context에 latent만 내보낸다.
+    <li>VAE decode 설정<br
+      - 샘플링 후 이미지 생성을 위한 vae 디코딩시에 무엇을 사용할지 선택할 수 있다.<br>
+      - Properties Panel에서 Use tiled VAE decode를 true로 하면 된다.<br>
+      - Tiled VAE 디코딩은 큰 이미지를 VRAM이 부족해도 디코딩할 수 있다. 대신 기본보다 느리다.
     </li>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
@@ -195,13 +189,13 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <i> {ex: 모델 로딩 -> 로라 적용 -> FreeU 또는 IPAdapter}</i><br>
   <i> 이것을 {모델 로딩 -> FreeU 또는 IPAdapter -> 로라 적용} 이렇게 순서를 바꾸게 하기 위해서 만든 노드이다.)</i><br>
   <p></p>
-  <li>로라 적용 순서를 바꾸면 이미지가 미묘하게 달라진다. 하지만 실제로 테스트하면 로라 적용을 미리 했을 때(Apply Lora Stack의 기능을 껐을 때) 더 퀄리티가 좋았다.</li>
-  <p></p>
   <li>Context노드와 비슷하게 생겻듯이 동일한 기능을 한다. 단지 로라 스택 적용만 추가되었을 뿐이다.</li>
   <p></p>
   <li>Properties Panel에서 로라 적용을 켜고 끌 수 있으며, 로라 적용을 끄면 본래대로 💬ED 로더에서 로라 스택을 적용하고, Context노드와 완전히 같은 기능을 하게 된다.<br>
     <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/93cc64d6-9f85-47b9-ae59-a3faaeafb8ee" width="400">
   </li>
+  <p></p>
+  <li>로라 적용 순서를 바꾸면 이미지가 미묘하게 달라진다. 하지만 실제로 테스트하면 로라 적용을 미리 했을 때(Apply Lora Stack의 기능을 껐을 때) 더 퀄리티가 좋았다.</li>  
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
