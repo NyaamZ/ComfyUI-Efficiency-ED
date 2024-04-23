@@ -135,8 +135,8 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 <p align="left">
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/8e730793-1c61-4152-90a7-343de68d16a6" width="300">
 </p>
-- 원래 Save Image에서 Context입력을 받을 수 있고 이미지를 입력 받으면 사운드를 재생하게 수정한 노드.<p></p>
-<li>Properties Panel에서 다음 처럼 사운드 재생을 끄고 켜거나 음량을 조절할 수 있다. (음량 범위:0 ~ 1)<br>
+- 원래 Save Image에서 Context입력을 받을 수 있고 이미지를 입력 받으면 종소리를 켜게 수정한 노드.<p></p>
+<li>Properties Panel에서 다음 처럼 종소리 재생을 끄고 켜거나 음량을 조절할 수 있다. (음량 범위:0 ~ 1)<br>
   <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/946fcc7f-6a06-4377-bfde-4516d616bd55" width="500"><br>
 </li>
 <p></p>
