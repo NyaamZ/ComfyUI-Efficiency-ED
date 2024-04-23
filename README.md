@@ -5,7 +5,7 @@
 =======
 ### 워크플로 (EXIF 있음):
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/ba9287bf-dfe5-4392-acfd-7e613672dfea" width="800" style="display: inline-block;">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/17561403-0ddd-4744-9213-5a9d2a8fe877" width="800" style="display: inline-block;">
 </p>
 원본과 다르게 💬ED노드는 Context 링크를 주고 받는다.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-( 오른쪽 아래에 BiRefNet이 포함되어 있다. 필요없으면 삭제하자.<br>
@@ -135,18 +135,22 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
+<p></p>
     <summary><b>Save Image 💬ED</b></summary>
 <p></p>
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/560dedba-6e04-448d-9727-9dc4e1935655" width="300">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/8e730793-1c61-4152-90a7-343de68d16a6" width="300">
 </p>
 - 원래 Save Image에서 Context입력을 받을 수 있고 이미지를 입력 받으면 사운드를 재생하게 수정한 노드.<p></p>
 <li>Properties Panel에서 다음 처럼 사운드 재생을 끄고 켜거나 음량을 조절할 수 있다. (음량 범위:0 ~ 1)<br>
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/d9f365c8-3363-4737-a21b-e1f1d2f995e6" width="500"><br>
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/946fcc7f-6a06-4377-bfde-4516d616bd55" width="500"><br>
 </li>
+<p></p>
+<li>종소리를 바꾸고 싶으면 efficiency-nodes-comfyui\js\assets\notify.mp3 를 변경하면 된다.</li>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
+  <p></p>
   <summary><b>LoRA Stacker</b></summary>
   <p></p>
   <p align="left">
@@ -177,6 +181,27 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <i> 💬ED 로더만 사용 가능함.)</i><br>
   <p></p>
   - 로라 스태커와 동일하게 "🔍 View model info..."로 정보를 볼 수 있다.<p></p>
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
+  <p></p>
+  <summary><b>Apply Lora Stack 💬ED</b></summary>
+  <p></p>
+  <p align="left">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f6e03a34-b05b-43fc-99be-2366610dd1ed" width="400">
+  </p>
+  - 로라 적용 시점을 늦추기 위해서 만든 노드이다. <br>
+  <i>(💬ED 로더가 로라 스택을 로딩한 시점에서 로라가 적용되는데 FreeU나 IPAdapter등을 사용하면 로라를 적용한 모델을 변경하게 된다.</i><br>
+  <i> {ex: 모델 로딩 -> 로라 적용 -> FreeU 또는 IPAdapter}</i><br>
+  <i> 이것을 {모델 로딩 -> FreeU 또는 IPAdapter -> 로라 적용} 이렇게 순서를 바꾸게 하기 위해서 만든 노드이다.)</i><br>
+  <p></p>
+  <li>로라 적용 순서를 바꾸면 이미지가 미묘하게 달라진다. 하지만 실제로 테스트하면 로라 적용을 미리 했을 때(Apply Lora Stack의 기능을 껐을 때) 더 퀄리티가 좋았다.</li>
+  <p></p>
+  <li>Context노드와 비슷하게 생겻듯이 동일한 기능을 한다. 단지 로라 스택 적용만 추가되었을 뿐이다.</li>
+  <p></p>
+  <li>Properties Panel에서 로라 적용을 켜고 끌 수 있으며, 로라 적용을 끄면 본래대로 💬ED 로더에서 로라 스택을 적용하고, Context노드와 완전히 같은 기능을 하게 된다.<br>
+    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/93cc64d6-9f85-47b9-ae59-a3faaeafb8ee" width="400">
+  </li>
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
