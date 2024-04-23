@@ -20,7 +20,7 @@ const NODE_COLORS = {
 	// "KSampler SDXL (Eff.) 💬ED": "random",
 	"KSampler TEXT (Eff.) 💬ED": "random",
 	"Load Image 💬ED": "blue",
-	"Save Image 💬ED": "red",
+	"Save Image 🔔ED": "red",
 	"Control Net Script 💬ED": "green",
 	"Embedding Stacker 💬ED": "blue",
 	"Apply LoRA Stack 💬ED": "blue",

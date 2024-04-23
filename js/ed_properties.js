@@ -103,7 +103,7 @@ app.registerExtension({
 app.registerExtension({
 	name: "Comfy.SaveImageED_Output",
 	async beforeRegisterNodeDef(nodeType, nodeData, app) {
-		if (nodeData.name === "Save Image 💬ED") {
+		if (nodeData.name === "Save Image 🔔ED") {
 			const onNodeCreated = nodeType.prototype.onNodeCreated;
 			// When the SaveImage node is created we want to override the serialization of the output name widget to run our S&R
 			nodeType.prototype.onNodeCreated = function () {
@@ -128,11 +128,14 @@ app.registerExtension({
 					}
 				};
 				
-/* 				this.onPropertyChanged = (property, value) => {
-					if (property == "Play sound" && value == true){			
-						this.playSound();
+ 				this.onPropertyChanged = (property, value) => {
+					if (property == "Play sound"){
+						if (value == true)
+							this.title = this.title.replace('🔕', '🔔');
+						else
+							this.title = this.title.replace('🔔', '🔕');
 					}
-				}; */
+				};
 				
 				return r;
 			};

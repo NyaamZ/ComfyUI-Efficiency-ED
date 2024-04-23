@@ -5271,7 +5271,7 @@ NODE_CLASS_MAPPINGS = {
     "KSampler (Efficient) 💬ED": TSC_KSampler_ED,
     "KSampler TEXT (Eff.) 💬ED": TSC_KSamplerTEXT_ED,    
     "Load Image 💬ED": LoadImage_ED,
-    "Save Image 💬ED": SaveImage_ED,
+    "Save Image 🔔ED": SaveImage_ED,
     "Control Net Script 💬ED": Control_Net_Script_ED,
     "Embedding Stacker 💬ED": Embedding_Stacker_ED,
     "Apply LoRA Stack 💬ED": TSC_Apply_LoRA_Stack_ED,
