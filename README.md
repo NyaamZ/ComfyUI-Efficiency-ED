@@ -5,7 +5,7 @@
 =======
 ### 워크플로 (EXIF 있음):
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/17561403-0ddd-4744-9213-5a9d2a8fe877" width="800" style="display: inline-block;">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/236b911a-71fd-450c-8888-4fb5c7a7a11d" width="800" style="display: inline-block;">
 </p>
 원본과 다르게 💬ED노드는 Context 링크를 주고 받는다.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-( 오른쪽 아래에 BiRefNet이 포함되어 있다. 필요없으면 워크플로에서 삭제하자.<br>
