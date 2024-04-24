@@ -4542,7 +4542,7 @@ class TSC_EfficientLoader_ED():
                     this_sync = node["properties"]["Synchronize widget with image size"]
                     #multi_sync = node["properties"]["Image size sync MultiAreaConditioning"]
                 if node["type"] == "Apply LoRA Stack 💬ED" and not use_apply_lora:
-                    if node["properties"]["Turn on Applry Lora"] == True:
+                    if node["properties"]["Turn on Apply Lora"] == True:
                         print(f"\033[36mEfficient Loader ED:Apply LoRA Stack ED is exist, loading Lora is pending.\033[0m")
                         use_apply_lora = True
 
