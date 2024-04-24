@@ -5,7 +5,7 @@
 =======
 ### 워크플로 (EXIF 있음):
 <p align="left">
-  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/236b911a-71fd-450c-8888-4fb5c7a7a11d" width="800" style="display: inline-block;">
+  <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/f3fa263b-c4df-497e-900f-efad978693a9" width="800" style="display: inline-block;">
 </p>
 원본과 다르게 💬ED노드는 Context 링크를 주고 받는다.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;-( 오른쪽 아래에 BiRefNet이 포함되어 있다. 필요없으면 워크플로에서 삭제하자.<br>
@@ -192,7 +192,7 @@ Efficiency Nodes 💬ED의 context는 rgthree의 노드가 없어도 독립적�
   <li>Context노드와 비슷하게 생겻듯이 동일한 기능을 한다. 단지 로라 스택 적용만 추가되었을 뿐이다.</li>
   <p></p>
   <li>Properties Panel에서 로라 적용을 켜고 끌 수 있으며, 로라 적용을 끄면 본래대로 💬ED 로더에서 로라 스택을 적용하고, Context노드와 완전히 같은 기능을 하게 된다.<br>
-    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/93cc64d6-9f85-47b9-ae59-a3faaeafb8ee" width="400">
+    <img src="https://github.com/jags111/efficiency-nodes-comfyui/assets/43065065/6f529961-ab01-4c69-bff7-42c5832536dd" width="400">
   </li>
   <p></p>
   <li>로라 적용 순서를 바꾸면 이미지가 미묘하게 달라진다. 하지만 실제로 테스트하면 로라 적용을 미리 했을 때(Apply Lora Stack의 기능을 껐을 때) 더 퀄리티가 좋았다.</li>  
